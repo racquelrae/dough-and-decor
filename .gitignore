@@ -26,3 +26,11 @@ yarn-error.log*
 
 # Environment files (local configs)
 /.env.*
+
+# .gitignore
+node_modules
+.expo
+.expo-shared
+*.log
+.env
+.DS_Store

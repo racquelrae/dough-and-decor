@@ -34,19 +34,19 @@ setGlobalOptions({ maxInstances: 10 });
 //   response.send("Hello from Firebase!");
 // });
 
-exports.isUsernameUnique = functions.https.onCall(async (data, context) => {
-  const { username, userId } = data;
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-  }
-  if (!username) {
-    throw new functions.https.HttpsError('invalid-argument', 'Username is required');
-  }
-  const usersRef = admin.firestore().collection('users');
-  const snapshot = await usersRef.where('username', '==', username.toLowerCase()).get();
-  let taken = false;
-  snapshot.forEach(doc => {
-    if (doc.id !== userId) taken = true;
-  });
-  return { unique: !taken };
-});
+// exports.isUsernameUnique = functions.https.onCall(async (data, context) => {
+//   const { username, userId } = data;
+//   if (!context.auth) {
+//     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+//   }
+//   if (!username) {
+//     throw new functions.https.HttpsError('invalid-argument', 'Username is required');
+//   }
+//   const usersRef = admin.firestore().collection('users');
+//   const snapshot = await usersRef.where('username', '==', username.toLowerCase()).get();
+//   let taken = false;
+//   snapshot.forEach(doc => {
+//     if (doc.id !== userId) taken = true;
+//   });
+//   return { unique: !taken };
+// });

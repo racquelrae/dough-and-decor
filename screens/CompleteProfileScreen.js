@@ -2,7 +2,6 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, setDoc } from 'firebase/firestore';
 import { functions } from '../firebase/config';
-import { httpsCallable } from 'firebase/functions';
 import { useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Circle, Path, Svg } from 'react-native-svg';
@@ -137,12 +136,12 @@ export default function CompleteProfileScreen() {
     }
   };
 
-  // Helper to check username uniqueness via Cloud Function
-  async function checkUsernameUnique(username, userId) {
-    const isUsernameUnique = httpsCallable(functions, 'isUsernameUnique');
-    const result = await isUsernameUnique({ username, userId });
-    return result.data.unique;
-  }
+  // // Helper to check username uniqueness via Cloud Function
+  // async function checkUsernameUnique(username, userId) {
+  //   const isUsernameUnique = httpsCallable(functions, 'isUsernameUnique');
+  //   const result = await isUsernameUnique({ username, userId });
+  //   return result.data.unique;
+  // }
 
   const handleContinue = async () => {
     if (!username || !(userType || customType)) {
@@ -157,14 +156,14 @@ export default function CompleteProfileScreen() {
     await logUserAuthState(user);
     try {
       setLoading(true);
-      console.log('Checking username uniqueness...');
-      const isUnique = await checkUsernameUnique(username.trim().toLowerCase(), user.uid);
-      console.log('Username uniqueness result:', isUnique);
-      if (!isUnique) {
-        setLoading(false);
-        setUsernameError('That username is already in use. Please choose another.');
-        return;
-      }
+      // console.log('Checking username uniqueness...');
+      // const isUnique = await checkUsernameUnique(username.trim().toLowerCase(), user.uid);
+      // console.log('Username uniqueness result:', isUnique);
+      // if (!isUnique) {
+      //   setLoading(false);
+      //   setUsernameError('That username is already in use. Please choose another.');
+      //   return;
+      // }
       let photoUrl = '';
       if (image) {
         console.log('Uploading to Cloudinary...');

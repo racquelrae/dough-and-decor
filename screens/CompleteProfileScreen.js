@@ -1,206 +1,398 @@
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { Circle, Path, Rect, Svg } from 'react-native-svg';
+import { Picker } from '@react-native-picker/picker';
+import * as ImagePicker from 'expo-image-picker';
+import { doc, setDoc } from 'firebase/firestore';
+import { functions } from '../firebase/config';
+import { useState } from 'react';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Circle, Path, Svg } from 'react-native-svg';
+import { useUser } from '../context/UserContext';
+import { app, db } from '../firebase/config';
+import { theme } from '../styles/theme';
+import { logUserAuthState } from '../utils/logUserAuthState';
 
 export default function CompleteProfileScreen() {
+  const [username, setUsername] = useState('');
+  const [userType, setUserType] = useState('');
+  const [customType, setCustomType] = useState('');
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false); // for iOS modal picker
+  const [usernameError, setUsernameError] = useState('');
+
+  const { user, userData, loading: userLoading } = useUser();
+
+  const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dwc2ifa1q/image/upload';
+  const CLOUDINARY_UPLOAD_PRESET = 'my_preset';
+
+  const pickerOptions = [
+    { label: 'Hobbyist', value: 'Hobbyist' },
+    { label: 'Small Business Owner', value: 'Small Business Owner' },
+    { label: 'Professional Baker', value: 'Professional Baker' },
+    { label: 'Student', value: 'Student' },
+    { label: 'Other (type below)', value: 'Other' },
+  ];
+
+  const userTypeOptions = [
+    'Hobbyist',
+    'Small Business Owner',
+    'Professional Baker',
+    'Student',
+    'Other',
+  ];
+
+  const handleImagePick = async (fromCamera = false) => {
+    try {
+      setLoading(true);
+      let permissionResult;
+      if (fromCamera) {
+        permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      } else {
+        permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      }
+      if (permissionResult.status !== 'granted') {
+        Alert.alert('Permission required', `Permission to access your ${fromCamera ? 'camera' : 'media library'} is required!`);
+        setLoading(false);
+        return;
+      }
+      let result;
+      if (fromCamera) {
+        result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'Images',
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      }
+      console.log('ImagePicker result:', result); // <-- log the result
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      } else if (result.canceled) {
+        // User cancelled, do nothing
+      } else {
+        Alert.alert('Error', 'Could not select image. Result: ' + JSON.stringify(result));
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong while picking the image.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showImagePickerOptions = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Take Photo', 'Choose from Library', 'Cancel'],
+          cancelButtonIndex: 2,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) handleImagePick(true);
+          else if (buttonIndex === 1) handleImagePick(false);
+        }
+      );
+    } else {
+      // For Android, use a simple Alert for now
+      Alert.alert(
+        'Profile Picture',
+        'Select an option',
+        [
+          { text: 'Take Photo', onPress: () => handleImagePick(true) },
+          { text: 'Choose from Library', onPress: () => handleImagePick(false) },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  };
+
+  // Uploads an image to Cloudinary and returns the secure_url
+  const uploadToCloudinary = async (imageUri) => {
+    const data = new FormData();
+    data.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'profile.jpg',
+    });
+    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    try {
+      const res = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: data,
+      });
+      const result = await res.json();
+      if (result.secure_url) {
+        return result.secure_url;
+      } else {
+        throw new Error('Cloudinary upload failed');
+      }
+    } catch (e) {
+      Alert.alert('Image Upload Error', 'Could not upload image.');
+      return null;
+    }
+  };
+
+  // // Helper to check username uniqueness via Cloud Function
+  // async function checkUsernameUnique(username, userId) {
+  //   const isUsernameUnique = httpsCallable(functions, 'isUsernameUnique');
+  //   const result = await isUsernameUnique({ username, userId });
+  //   return result.data.unique;
+  // }
+
+  const handleContinue = async () => {
+    if (!username || !(userType || customType)) {
+      Alert.alert('Missing Info', 'Please fill in all fields.');
+      return;
+    }
+    if (!user) {
+      Alert.alert('Not logged in', 'You must be logged in to update your profile.');
+      return;
+    }
+    // Log user auth state for debugging
+    await logUserAuthState(user);
+    try {
+      setLoading(true);
+      // console.log('Checking username uniqueness...');
+      // const isUnique = await checkUsernameUnique(username.trim().toLowerCase(), user.uid);
+      // console.log('Username uniqueness result:', isUnique);
+      // if (!isUnique) {
+      //   setLoading(false);
+      //   setUsernameError('That username is already in use. Please choose another.');
+      //   return;
+      // }
+      let photoUrl = '';
+      if (image) {
+        console.log('Uploading to Cloudinary...');
+        photoUrl = await uploadToCloudinary(image);
+        console.log('Cloudinary upload result:', photoUrl);
+        if (!photoUrl) {
+          setLoading(false);
+          return;
+        }
+      }
+      const userRef = doc(db, 'users', user.uid);
+      const updateData = {
+        username: username ? username.trim().toLowerCase() : null,
+        description: userType === 'Other' ? (customType || null) : (userType || null),
+        photo: photoUrl || null,
+      };
+      console.log('Writing to Firestore with setDoc:', updateData);
+      await setDoc(userRef, updateData, { merge: true });
+      console.log('Firestore setDoc success');
+      Alert.alert('Success', 'Profile updated!');
+    } catch (e) {
+      console.log('Profile update error:', e);
+      Alert.alert('Error', 'Could not update profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // iOS custom picker handler
+  const handleUserTypePress = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [...userTypeOptions, 'Cancel'],
+          cancelButtonIndex: userTypeOptions.length,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === userTypeOptions.length) return;
+          setUserType(userTypeOptions[buttonIndex]);
+        }
+      );
+    }
+  };
+
+  const handleMinimalUpdate = async () => {
+    if (!user) {
+      Alert.alert('Not logged in', 'You must be logged in to update your profile.');
+      return;
+    }
+    const userRef = doc(db, 'users', user.uid);
+    try {
+      await setDoc(userRef, { testField: 'test' }, { merge: true });
+      console.log('Minimal update succeeded');
+      Alert.alert('Success', 'Minimal update succeeded!');
+    } catch (e) {
+      console.log('Minimal update error:', e);
+      Alert.alert('Error', 'Minimal update failed: ' + e.message);
+    }
+  };
+
   return (
-    <View style={styles.completeProfileContainer}>
-      <View style={styles.cellstrip}>
-        <Text style={styles._04}>16:04</Text>
-      </View>
-      <View style={styles.frame25}>
-        <Text style={styles.profile}>Profile</Text>
-      </View>
-      <View style={styles.contentArea}>
-        <View style={styles.headerSection}>
-          <Text style={styles.completeyourprofile}>Complete your profile</Text>
-          <Text style={styles.loremipsumdolorsitametpretiumcrasidduipellentesqueornareQuisquemalesuadanetuspulvinardiam}>
-            Lorem ipsum dolor sit amet pretium cras id dui pellentesque ornare. Quisque malesuada netus pulvinar diam.
-          </Text>
-        </View>
-        <View style={styles.avatarSection}>
-          <Svg style={styles.ellipse48} width="102" height="101" viewBox="0 0 102 101" fill="none" >
-            <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA"/>
-          </Svg>
-          <View style={styles.vector}>
-            <Svg style={styles.Vector} width="42" height="60" viewBox="0 0 42 60" fill="none" >
-              <Path d="M21.1794 20.8069C26.3247 20.8069 30.4958 16.6359 30.4958 11.4906C30.4958 6.34533 26.3247 2.17426 21.1794 2.17426C16.0341 2.17426 11.8631 6.34533 11.8631 11.4906C11.8631 16.6359 16.0341 20.8069 21.1794 20.8069Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
-              <Path d="M38.3297 48.0189C33.8578 58.064 21.1215 57.236 21.1215 57.236C21.1215 57.236 8.37674 58.0309 3.91318 48.0189C3.04931 46.0929 2.60266 44.0058 2.60266 41.8949C2.60266 39.784 3.04931 37.6972 3.91318 35.7712C8.37674 25.7261 21.1215 26.5541 21.1215 26.5541C21.1215 26.5541 33.8578 25.7592 38.3297 35.7712C39.1935 37.6972 39.6402 39.784 39.6402 41.8949C39.6402 44.0058 39.1935 46.0929 38.3297 48.0189Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
-            </Svg>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <View style={theme.screenContainer}>
+          <View style={theme.headerContainer}>
+            <Text style={theme.heading}>Complete Your Profile</Text>
+          </View>
+          <View style={theme.formContainer}>
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarWrapper}>
+                <Svg style={styles.ellipse48} width="102" height="101" viewBox="0 0 102 101" fill="none" >
+                  <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA"/>
+                </Svg>
+                {loading ? (
+                  <ActivityIndicator size="large" color="#D4B2A7" style={styles.profileImage} />
+                ) : image ? (
+                  <Image source={{ uri: image }} style={styles.profileImage} />
+                ) : (
+                  <View style={styles.personIconWrapper}>
+                    <Svg width="42" height="60" viewBox="0 0 42 60" fill="none" opacity={0.4}>
+                      <Path d="M21.1794 20.8069C26.3247 20.8069 30.4958 16.6359 30.4958 11.4906C30.4958 6.34533 26.3247 2.17426 21.1794 2.17426C16.0341 2.17426 11.8631 6.34533 11.8631 11.4906C11.8631 16.6359 16.0341 20.8069 21.1794 20.8069Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
+                      <Path d="M38.3297 48.0189C33.8578 58.064 21.1215 57.236 21.1215 57.236C21.1215 57.236 8.37674 58.0309 3.91318 48.0189C3.04931 46.0929 2.60266 44.0058 2.60266 41.8949C2.60266 39.784 3.04931 37.6972 3.91318 35.7712C8.37674 25.7261 21.1215 26.5541 21.1215 26.5541C21.1215 26.5541 33.8578 25.7592 38.3297 35.7712C39.1935 37.6972 39.6402 39.784 39.6402 41.8949C39.6402 44.0058 39.1935 46.0929 38.3297 48.0189Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
+                    </Svg>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity style={styles.uploadBtn} activeOpacity={0.7} onPress={showImagePickerOptions}>
+                <Text style={theme.link}>{image ? 'Change Profile Picture' : 'Upload Profile Picture'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={theme.formContainer}>
+              <Text style={theme.label}>Username</Text>
+              <TextInput
+                style={theme.textInput}
+                placeholder="username"
+                placeholderTextColor="#1C0F0D55"
+                value={username}
+                autoCapitalize="none"
+                onChangeText={text => {
+                  setUsername(text);
+                  setUsernameError('');
+                }}
+              />
+              {!!usernameError && (
+                <Text style={{ color: '#D7263D', marginBottom: 8, marginLeft: 4, fontSize: 14 }}>{usernameError}</Text>
+              )}
+              <Text style={theme.label}>What best describes you?</Text>
+              {Platform.OS === 'ios' ? (
+                <TouchableOpacity
+                  style={[theme.textInput, { justifyContent: 'center' }]}
+                  onPress={handleUserTypePress}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: userType ? '#1C0F0D' : '#1C0F0D55' }}>
+                    {userType ? (userType === 'Other' ? 'Other (type below)' : userType) : 'Select an option...'}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <Picker
+                  selectedValue={userType}
+                  onValueChange={(itemValue) => setUserType(itemValue)}
+                  style={{ minHeight: 44, width: '100%', color: '#1C0F0D' }}
+                  dropdownIconColor="#D4B2A7"
+                >
+                  <Picker.Item label="Select an option..." value="" />
+                  <Picker.Item label="Hobbyist" value="Hobbyist" />
+                  <Picker.Item label="Small Business Owner" value="Small Business Owner" />
+                  <Picker.Item label="Professional Baker" value="Professional Baker" />
+                  <Picker.Item label="Student" value="Student" />
+                  <Picker.Item label="Other (type below)" value="Other" />
+                </Picker>
+              )}
+              {userType === 'Other' && (
+                <TextInput
+                  style={theme.textInput}
+                  placeholder="Type your description..."
+                  placeholderTextColor="#1C0F0D55"
+                  value={customType}
+                  onChangeText={setCustomType}
+                />
+              )}
+            </View>
+            <View style={theme.buttonRow}>
+              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0 }]} onPress={handleContinue} disabled={loading}> 
+                <Text style={theme.buttonText}>{loading ? 'Saving...' : 'Continue'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#aaa' }]} onPress={handleMinimalUpdate} disabled={loading}>
+                <Text style={theme.buttonText}>Minimal Update</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        <View style={styles.formArea}>
-          <Text style={styles.fullname}>Full name</Text>
-          <View style={styles.inputBox}/>
-          <Text style={styles.gender}>Gender</Text>
-          <View style={styles.inputBox}><Text style={styles.inputText}>Gender</Text></View>
-          <Text style={styles.mobileNumber}>Mobile Number</Text>
-          <View style={styles.inputBox}/>
-          <Text style={styles.dateofbirth}>Date of birth</Text>
-          <View style={styles.inputBox}><Text style={styles.inputText}>DD / MM /YYY</Text></View>
-          <Text style={styles.inputText}>+ 123 456 789</Text>
-          <Text style={styles.inputText}>example@example.com</Text>
-        </View>
-        <View style={styles.buttonArea}>
-          <View style={styles.loginButton}>
-            <Svg style={styles.group54} width="207" height="45" viewBox="0 0 207 45" fill="none" >
-              <Rect width="207" height="45" rx="22.5" fill="#EDC7BA"/>
-            </Svg>
-            <Text style={styles.logIn}>continue</Text>
-          </View>
-        </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  completeProfileContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 253, 249, 1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  cellstrip: {
-    width: '100%',
-    paddingTop: 10,
-    paddingBottom: 8,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    backgroundColor: 'rgba(255, 253, 249, 1)',
+  avatarSection: {
     alignItems: 'center',
     marginBottom: 16,
   },
-  _04: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'League Spartan',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  frame25: {
-    marginBottom: 24,
+  avatarWrapper: {
+    width: 102,
+    height: 101,
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  profile: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
+  ellipse48: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 102,
+    height: 101,
   },
-  contentArea: {
-    width: '100%',
+  profileImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    resizeMode: 'cover',
+  },
+  personIconWrapper: {
+    width: 42,
+    height: 60,
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 20,
+    left: 30,
   },
   headerSection: {
     width: '100%',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  completeyourprofile: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  loremipsumdolorsitametpretiumcrasidduipellentesqueornareQuisquemalesuadanetuspulvinardiam: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 13,
-    fontWeight: '400',
+  uploadBtn: {
+    marginTop: 8,
     marginBottom: 8,
   },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 16,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  ellipse48: {
-    width: 101,
-    height: 101,
-    marginBottom: 8,
-  },
-  vector: {
+  modalContent: {
     position: 'absolute',
-    top: 23,
-    left: 32,
-    width: 37,
-    height: 55,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    maxHeight: 350,
   },
-  formArea: {
-    width: '100%',
-    alignItems: 'stretch',
-    marginBottom: 16,
+  modalItem: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  fullname: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  inputBox: {
-    width: '100%',
-    height: 41,
-    backgroundColor: 'rgba(237, 199, 186, 1)',
-    justifyContent: 'center',
-    borderRadius: 18,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-  },
-  inputText: {
-    color: 'rgba(28, 15, 13, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  gender: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  mobileNumber: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  dateofbirth: {
-    color: 'rgba(50, 32, 28, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  buttonArea: {
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  loginButton: {
-    height: 45,
-    width: 207,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  group54: {
-    position: 'absolute',
-    height: 45,
-    width: 207,
-  },
-  logIn: {
-    color: 'rgba(255, 253, 249, 1)',
-    fontFamily: 'Poppins',
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    zIndex: 1,
+  modalItemText: {
+    fontSize: 18,
+    color: '#1C0F0D',
   },
 });

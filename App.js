@@ -1,8 +1,8 @@
-import React from 'react';
-import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
-import AppNavigator from './navigation/AppNavigator';
+import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold, useFonts } from '@expo-google-fonts/poppins';
 import { NavigationContainer } from '@react-navigation/native';
 import { ActivityIndicator, View } from 'react-native';
+import { UserProvider } from './context/UserContext';
+import AppNavigator from './navigation/AppNavigator';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -20,8 +20,10 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <UserProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </UserProvider>
   );
 }

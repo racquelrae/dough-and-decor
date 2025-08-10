@@ -34,14 +34,15 @@ export default function HomeScreen() {
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />
           <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} />
           <HomeCard label="Measurement Converter" style={styles.cardMeasurement} />
-          <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('Timer Menu')} />
+          <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('Timer Menu' as never)} />
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function HomeCard({ label, style, onPress }) {
+type HomeCardProps = { label: string; style?: any; onPress?: () => void };
+function HomeCard({ label, style, onPress }: HomeCardProps) {
   if (onPress) {
     return (
       <TouchableOpacity style={[styles.homeCard, style]} onPress={onPress}>
@@ -55,7 +56,6 @@ function HomeCard({ label, style, onPress }) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

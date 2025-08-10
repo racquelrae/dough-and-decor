@@ -1,18 +1,28 @@
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc, DocumentData } from 'firebase/firestore';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, db } from '../firebase/config';
 
-const UserContext = createContext({
+type UserContextType = {
+  user: User | null;
+  userData: DocumentData | null;
+  loading: boolean;
+};
+
+const UserContext = createContext<UserContextType>({
   user: null,
   userData: null,
   loading: true,
 });
 
-export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+type UserProviderProps = {
+  children: ReactNode;
+};
+
+export const UserProvider = ({ children }: UserProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<DocumentData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {

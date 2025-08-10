@@ -109,13 +109,13 @@ export default function HomeScreen() {
           <HomeCard label="Inventory" style={styles.cardInventory} />
           <HomeCard label="Shopping List" style={styles.cardShoppingList} onPress={() => navigation.navigate('ShoppingList' as never)} />
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />
-          <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('ColorBlend' as never)} />
+          <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('IcingColorGuide' as never)} />
           <HomeCard label="Measurement Converter" style={styles.cardMeasurement} />
           <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
         </View>
       </ScrollView>
     </View>
-    </>
+    </> 
   );
 }
 

@@ -6,7 +6,7 @@ import { AMERICOLOR_SWATCHES } from "@/data/icingSwatches";
 import { Stack } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function ColorBlendScreen() {
+export default function IcingColorGuide() {
   const { width, height } = useWindowDimensions();
   const cols = width > 720 ? 4 : width > 480 ? 3 : 2;
   const fadeHeight = Math.min(height * 0.55, 520);

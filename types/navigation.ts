@@ -4,8 +4,8 @@ export type RootStackParamList = {
   Signup: undefined;
   CompleteProfile: undefined;
   Home: undefined;
-  TimerMenu: undefined;           
-  Timer: { seconds: number } | undefined; 
-  ColorBlend: undefined; 
+  TimerMenu: undefined;
+  Timer: { seconds: number } | undefined;
+  IcingColorGuide: undefined;
   ShoppingList: undefined;
 };

@@ -6,7 +6,7 @@ import { Path, Svg } from 'react-native-svg';
 import { auth, db } from '../firebase/config';
 import { theme } from '../styles/theme';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation }: { navigation: any }) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +36,11 @@ export default function LoginScreen({ navigation }) {
       }
       navigation.navigate('Home'); // Navigate to Home after successful login
     } catch (err) {
-      setError(err.message || 'Login failed');
+      if (err instanceof Error) {
+        setError(err.message || 'Login failed');
+      } else {
+        setError('Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,7 +56,11 @@ export default function LoginScreen({ navigation }) {
       await sendPasswordResetEmail(auth, email);
       Alert.alert('Password Reset', 'A password reset email has been sent.');
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not send reset email.');
+      if (err instanceof Error) {
+        Alert.alert('Error', err.message || 'Could not send reset email.');
+      } else {
+        Alert.alert('Error', 'Could not send reset email.');
+      }
     } finally {
       setLoading(false);
     }
@@ -103,7 +111,7 @@ export default function LoginScreen({ navigation }) {
                 </Svg>
               ) : (
                 // Eye with slash
-                <Svg style={theme.vector} width="28" height="24" viewBox="0 0 28 24" fill="none" >
+                <Svg width="28" height="24" viewBox="0 0 28 24" fill="none" >
                   <Path d="M8.16365 20.002C6.49202 19.0878 5.08334 17.7595 4.07274 16.1443C1.81865 12.5484 4.70687 9.30023 7.79142 7.55341C9.39197 6.68841 11.158 6.17327 12.9726 6.04209C14.7872 5.91092 16.609 6.16665 18.3173 6.79246M21.1318 8.32248C22.1305 9.0783 22.9655 10.0289 23.5864 11.1166L23.6191 11.178C26.1514 15.7026 21.3119 19.3598 17.4828 20.7302C15.2974 21.5098 12.9275 21.611 10.6836 21.0207M23.3492 5.39342C23.3492 5.39342 25.2054 6.75967 26.0042 7.59029M1.57727 7.59029C1.57727 7.59029 7.04686 1.953 13.7928 1.953C16.2891 2.01153 18.7336 2.67706 20.915 3.89209M10.9046 16.2425C10.401 15.6811 10.0709 14.9859 9.95416 14.2408C9.83741 13.4958 9.939 12.7328 10.2467 12.0443C10.5544 11.3557 11.0551 10.7712 11.688 10.3612C12.3209 9.95113 13.0591 9.73328 13.8133 9.73393C14.4328 9.73239 15.0434 9.88111 15.5927 10.1675M17.716 13.6244C17.7149 14.6591 17.3034 15.6511 16.5717 16.3827C15.84 17.1144 14.848 17.5259 13.8132 17.527M22.1219 2.70979L6.60095 22.3012" stroke="#3E2823" strokeOpacity="0.45" strokeWidth="2.04545" strokeLinecap="round" strokeLinejoin="round"/>
                 </Svg>
               )}

@@ -1,12 +1,14 @@
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, setDoc } from 'firebase/firestore';
-import { functions } from '../firebase/config';
 import { useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView,
+  Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
+} from 'react-native';
 import { Circle, Path, Svg } from 'react-native-svg';
 import { useUser } from '../context/UserContext';
-import { app, db } from '../firebase/config';
+import { db } from '../firebase/config';
 import { theme } from '../styles/theme';
 import { logUserAuthState } from '../utils/logUserAuthState';
 
@@ -14,70 +16,43 @@ export default function CompleteProfileScreen() {
   const [username, setUsername] = useState('');
   const [userType, setUserType] = useState('');
   const [customType, setCustomType] = useState('');
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pickerVisible, setPickerVisible] = useState(false); // for iOS modal picker
   const [usernameError, setUsernameError] = useState('');
 
-  const { user, userData, loading: userLoading } = useUser();
+  const { user } = useUser() as { user: any };
 
   const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dwc2ifa1q/image/upload';
   const CLOUDINARY_UPLOAD_PRESET = 'my_preset';
 
-  const pickerOptions = [
-    { label: 'Hobbyist', value: 'Hobbyist' },
-    { label: 'Small Business Owner', value: 'Small Business Owner' },
-    { label: 'Professional Baker', value: 'Professional Baker' },
-    { label: 'Student', value: 'Student' },
-    { label: 'Other (type below)', value: 'Other' },
-  ];
-
-  const userTypeOptions = [
-    'Hobbyist',
-    'Small Business Owner',
-    'Professional Baker',
-    'Student',
-    'Other',
-  ];
+  const userTypeOptions = ['Hobbyist','Small Business Owner','Professional Baker','Student','Other'];
 
   const handleImagePick = async (fromCamera = false) => {
     try {
       setLoading(true);
-      let permissionResult;
-      if (fromCamera) {
-        permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      } else {
-        permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      }
+      const permissionResult = fromCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       if (permissionResult.status !== 'granted') {
         Alert.alert('Permission required', `Permission to access your ${fromCamera ? 'camera' : 'media library'} is required!`);
-        setLoading(false);
         return;
       }
-      let result;
-      if (fromCamera) {
-        result = await ImagePicker.launchCameraAsync({
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7,
-        });
-      } else {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: 'Images',
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7,
-        });
-      }
-      console.log('ImagePicker result:', result); // <-- log the result
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+
+      const result = fromCamera
+        ? await ImagePicker.launchCameraAsync({
+            allowsEditing: true, aspect: [1, 1], quality: 0.7
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images, // <-- enum, not string
+            allowsEditing: true, aspect: [1, 1], quality: 0.7
+          });
+
+      console.log('ImagePicker result:', result);
+      if (!result.canceled && result.assets?.length) {
         setImage(result.assets[0].uri);
-      } else if (result.canceled) {
-        // User cancelled, do nothing
-      } else {
-        Alert.alert('Error', 'Could not select image. Result: ' + JSON.stringify(result));
       }
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'Something went wrong while picking the image.');
     } finally {
       setLoading(false);
@@ -87,61 +62,31 @@ export default function CompleteProfileScreen() {
   const showImagePickerOptions = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Take Photo', 'Choose from Library', 'Cancel'],
-          cancelButtonIndex: 2,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) handleImagePick(true);
-          else if (buttonIndex === 1) handleImagePick(false);
-        }
+        { options: ['Take Photo', 'Choose from Library', 'Cancel'], cancelButtonIndex: 2 },
+        (i) => { if (i === 0) handleImagePick(true); if (i === 1) handleImagePick(false); }
       );
     } else {
-      // For Android, use a simple Alert for now
-      Alert.alert(
-        'Profile Picture',
-        'Select an option',
-        [
-          { text: 'Take Photo', onPress: () => handleImagePick(true) },
-          { text: 'Choose from Library', onPress: () => handleImagePick(false) },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+      Alert.alert('Profile Picture', 'Select an option', [
+        { text: 'Take Photo', onPress: () => handleImagePick(true) },
+        { text: 'Choose from Library', onPress: () => handleImagePick(false) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   };
 
-  // Uploads an image to Cloudinary and returns the secure_url
-  const uploadToCloudinary = async (imageUri) => {
+  const uploadToCloudinary = async (imageUri: string) => {
     const data = new FormData();
-    data.append('file', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'profile.jpg',
-    });
+    data.append('file', { uri: imageUri, type: 'image/jpeg', name: 'profile.jpg' } as any);
     data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
     try {
-      const res = await fetch(CLOUDINARY_URL, {
-        method: 'POST',
-        body: data,
-      });
+      const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: data });
       const result = await res.json();
-      if (result.secure_url) {
-        return result.secure_url;
-      } else {
-        throw new Error('Cloudinary upload failed');
-      }
-    } catch (e) {
+      return result.secure_url ?? null;
+    } catch {
       Alert.alert('Image Upload Error', 'Could not upload image.');
       return null;
     }
   };
-
-  // // Helper to check username uniqueness via Cloud Function
-  // async function checkUsernameUnique(username, userId) {
-  //   const isUsernameUnique = httpsCallable(functions, 'isUsernameUnique');
-  //   const result = await isUsernameUnique({ username, userId });
-  //   return result.data.unique;
-  // }
 
   const handleContinue = async () => {
     if (!username || !(userType || customType)) {
@@ -152,37 +97,24 @@ export default function CompleteProfileScreen() {
       Alert.alert('Not logged in', 'You must be logged in to update your profile.');
       return;
     }
-    // Log user auth state for debugging
     await logUserAuthState(user);
+
     try {
       setLoading(true);
-      // console.log('Checking username uniqueness...');
-      // const isUnique = await checkUsernameUnique(username.trim().toLowerCase(), user.uid);
-      // console.log('Username uniqueness result:', isUnique);
-      // if (!isUnique) {
-      //   setLoading(false);
-      //   setUsernameError('That username is already in use. Please choose another.');
-      //   return;
-      // }
       let photoUrl = '';
       if (image) {
-        console.log('Uploading to Cloudinary...');
-        photoUrl = await uploadToCloudinary(image);
-        console.log('Cloudinary upload result:', photoUrl);
-        if (!photoUrl) {
-          setLoading(false);
-          return;
-        }
+        photoUrl = await uploadToCloudinary(image) || '';
       }
+
       const userRef = doc(db, 'users', user.uid);
       const updateData = {
-        username: username ? username.trim().toLowerCase() : null,
+        username: username.trim().toLowerCase(),
         description: userType === 'Other' ? (customType || null) : (userType || null),
         photo: photoUrl || null,
       };
+
       console.log('Writing to Firestore with setDoc:', updateData);
       await setDoc(userRef, updateData, { merge: true });
-      console.log('Firestore setDoc success');
       Alert.alert('Success', 'Profile updated!');
     } catch (e) {
       console.log('Profile update error:', e);
@@ -192,18 +124,11 @@ export default function CompleteProfileScreen() {
     }
   };
 
-  // iOS custom picker handler
   const handleUserTypePress = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [...userTypeOptions, 'Cancel'],
-          cancelButtonIndex: userTypeOptions.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === userTypeOptions.length) return;
-          setUserType(userTypeOptions[buttonIndex]);
-        }
+        { options: [...userTypeOptions, 'Cancel'], cancelButtonIndex: userTypeOptions.length },
+        (i) => { if (i !== userTypeOptions.length) setUserType(userTypeOptions[i]); }
       );
     }
   };
@@ -213,34 +138,29 @@ export default function CompleteProfileScreen() {
       Alert.alert('Not logged in', 'You must be logged in to update your profile.');
       return;
     }
-    const userRef = doc(db, 'users', user.uid);
     try {
-      await setDoc(userRef, { testField: 'test' }, { merge: true });
-      console.log('Minimal update succeeded');
+      await setDoc(doc(db, 'users', user.uid), { testField: 'test' }, { merge: true });
       Alert.alert('Success', 'Minimal update succeeded!');
-    } catch (e) {
-      console.log('Minimal update error:', e);
-      Alert.alert('Error', 'Minimal update failed: ' + e.message);
+    } catch (e: any) {
+      Alert.alert('Error', 'Minimal update failed: ' + (e?.message || ''));
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-    >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View style={theme.screenContainer}>
           <View style={theme.headerContainer}>
             <Text style={theme.heading}>Complete Your Profile</Text>
           </View>
+
           <View style={theme.formContainer}>
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrapper}>
-                <Svg style={styles.ellipse48} width="102" height="101" viewBox="0 0 102 101" fill="none" >
-                  <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA"/>
+                <Svg style={styles.ellipse48} width="102" height="101" viewBox="0 0 102 101" fill="none">
+                  <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA" />
                 </Svg>
+
                 {loading ? (
                   <ActivityIndicator size="large" color="#D4B2A7" style={styles.profileImage} />
                 ) : image ? (
@@ -254,10 +174,12 @@ export default function CompleteProfileScreen() {
                   </View>
                 )}
               </View>
+
               <TouchableOpacity style={styles.uploadBtn} activeOpacity={0.7} onPress={showImagePickerOptions}>
                 <Text style={theme.link}>{image ? 'Change Profile Picture' : 'Upload Profile Picture'}</Text>
               </TouchableOpacity>
             </View>
+
             <View style={theme.formContainer}>
               <Text style={theme.label}>Username</Text>
               <TextInput
@@ -266,32 +188,20 @@ export default function CompleteProfileScreen() {
                 placeholderTextColor="#1C0F0D55"
                 value={username}
                 autoCapitalize="none"
-                onChangeText={text => {
-                  setUsername(text);
-                  setUsernameError('');
-                }}
+                onChangeText={(t) => { setUsername(t); setUsernameError(''); }}
               />
-              {!!usernameError && (
-                <Text style={{ color: '#D7263D', marginBottom: 8, marginLeft: 4, fontSize: 14 }}>{usernameError}</Text>
-              )}
+              {!!usernameError && <Text style={{ color: '#D7263D', marginBottom: 8, marginLeft: 4, fontSize: 14 }}>{usernameError}</Text>}
+
               <Text style={theme.label}>What best describes you?</Text>
+
               {Platform.OS === 'ios' ? (
-                <TouchableOpacity
-                  style={[theme.textInput, { justifyContent: 'center' }]}
-                  onPress={handleUserTypePress}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={[theme.textInput, { justifyContent: 'center' }]} onPress={handleUserTypePress} activeOpacity={0.7}>
                   <Text style={{ color: userType ? '#1C0F0D' : '#1C0F0D55' }}>
                     {userType ? (userType === 'Other' ? 'Other (type below)' : userType) : 'Select an option...'}
                   </Text>
                 </TouchableOpacity>
               ) : (
-                <Picker
-                  selectedValue={userType}
-                  onValueChange={(itemValue) => setUserType(itemValue)}
-                  style={{ minHeight: 44, width: '100%', color: '#1C0F0D' }}
-                  dropdownIconColor="#D4B2A7"
-                >
+                <Picker selectedValue={userType} onValueChange={(v) => setUserType(v)} style={{ minHeight: 44, width: '100%', color: '#1C0F0D' }} dropdownIconColor="#D4B2A7">
                   <Picker.Item label="Select an option..." value="" />
                   <Picker.Item label="Hobbyist" value="Hobbyist" />
                   <Picker.Item label="Small Business Owner" value="Small Business Owner" />
@@ -300,6 +210,7 @@ export default function CompleteProfileScreen() {
                   <Picker.Item label="Other (type below)" value="Other" />
                 </Picker>
               )}
+
               {userType === 'Other' && (
                 <TextInput
                   style={theme.textInput}
@@ -310,8 +221,9 @@ export default function CompleteProfileScreen() {
                 />
               )}
             </View>
+
             <View style={theme.buttonRow}>
-              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0 }]} onPress={handleContinue} disabled={loading}> 
+              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0 }]} onPress={handleContinue} disabled={loading}>
                 <Text style={theme.buttonText}>{loading ? 'Saving...' : 'Continue'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#aaa' }]} onPress={handleMinimalUpdate} disabled={loading}>
@@ -326,73 +238,15 @@ export default function CompleteProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarWrapper: {
-    width: 102,
-    height: 101,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  ellipse48: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 102,
-    height: 101,
-  },
-  profileImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    resizeMode: 'cover',
-  },
-  personIconWrapper: {
-    width: 42,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    top: 20,
-    left: 30,
-  },
-  headerSection: {
-    width: '100%',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  uploadBtn: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  modalContent: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-    maxHeight: 350,
-  },
-  modalItem: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalItemText: {
-    fontSize: 18,
-    color: '#1C0F0D',
-  },
+  avatarSection: { alignItems: 'center', marginBottom: 16 },
+  avatarWrapper: { width: 102, height: 101, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  ellipse48: { position: 'absolute', top: 0, left: 0, width: 102, height: 101 },
+  profileImage: { width: 70, height: 70, borderRadius: 35, position: 'absolute', top: 16, left: 16, resizeMode: 'cover' },
+  personIconWrapper: { width: 42, height: 60, alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 20, left: 30 },
+  headerSection: { width: '100%', alignItems: 'flex-start', marginBottom: 16 },
+  uploadBtn: { marginTop: 8, marginBottom: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
+  modalContent: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: 350 },
+  modalItem: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  modalItemText: { fontSize: 18, color: '#1C0F0D' },
 });

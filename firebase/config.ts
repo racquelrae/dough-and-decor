@@ -3,10 +3,7 @@ import { getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBD6eP8K8nUKyfJ3DSxDbtQnBWWTyKz5Zc",
   authDomain: "dough-and-decor.firebaseapp.com",

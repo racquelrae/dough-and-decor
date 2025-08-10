@@ -1,13 +1,13 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CompleteProfileScreen from '../app/CompleteProfileScreen';
-import HomeScreen from '../app/HomeScreen';
-import LaunchScreen from '../app/LaunchScreen';
-import LoginScreen from '../app/LoginScreen';
-import SignupScreen from '../app/SignUpScreen';
-import TimerMenuScreen from '../app/timerMenuScreen';
-import TimerScreen from '../app/timerScreen';
+import CompleteProfileScreen from '../app/completeProfile';
+import HomeScreen from '../app/index';
+import LaunchScreen from '../app/launch';
+import LoginScreen from '../app/login';
+import SignupScreen from '../app/signUp';
+import TimerMenuScreen from '../app/timerMenu';
+import TimerScreen from '../app/timer';
 import { RootStackParamList } from '../types/navigation';
-import ShoppingListScreen from '../app/shoppingListScreen';
+import ShoppingListScreen from '../app/shoppingList';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

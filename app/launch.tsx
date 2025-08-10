@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useEffect } from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
 
 export default function LaunchScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<any>>();
 
   useEffect(() => {
     const timer = setTimeout(() => {

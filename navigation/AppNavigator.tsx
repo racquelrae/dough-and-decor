@@ -1,12 +1,13 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../app/types/navigation'; 
 import CompleteProfileScreen from '../app/CompleteProfileScreen';
+import HomeScreen from '../app/HomeScreen';
 import LaunchScreen from '../app/LaunchScreen';
 import LoginScreen from '../app/LoginScreen';
 import SignupScreen from '../app/SignUpScreen';
-import HomeScreen from '../app/HomeScreen';
 import TimerMenuScreen from '../app/timerMenuScreen';
 import TimerScreen from '../app/timerScreen';
+import { RootStackParamList } from '../types/navigation';
+import ShoppingListScreen from '../app/shoppingListScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -24,6 +25,11 @@ export default function AppNavigator() {
       />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Timer" component={TimerScreen} />
+      <Stack.Screen
+        name="ColorBlend"
+        component={require('../app/colorBlendScreen').default} 
+        options={{ title: 'Icing Color Blending Guide' }} />
+      <Stack.Screen name="ShoppingList" component={ShoppingListScreen} />
     </Stack.Navigator>
   );
 }

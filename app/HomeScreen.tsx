@@ -2,16 +2,46 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
-import { useUser } from '../context/UserContext'; // 👈 use your context
+import { useUser } from '../context/UserContext'; 
+import { Stack } from 'expo-router'; 
 
 function niceName(raw?: string | null) {
   if (!raw) return '';
-  // your usernames are saved lowercase; make them pretty
   return raw
     .split(/[\s._-]+/)
     .map(s => s.charAt(0).toUpperCase() + s.slice(1))
     .join(' ');
 }
+
+  function CircleIcon({
+    children,
+    size = 28,
+    bg = "#BB9D93",
+    style,
+  }: {
+    children: React.ReactNode;
+    size?: number;
+    bg?: string;
+    style?: any;
+  }) {
+    return (
+      <View
+        style={[
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: bg,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
+    );
+  }
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -27,6 +57,8 @@ export default function HomeScreen() {
   }, [user, userData]);
 
   return (
+    <>
+        <Stack.Screen options = {{ headerShown: false}}/>
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={styles.background}>
@@ -34,30 +66,56 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Hi, {userName}!</Text>
             <Text style={styles.subGreeting}>What are you creating today?</Text>
             <View style={styles.iconRow}>
-              <View style={styles.notificationIcon} />
-              <View style={styles.searchIcon} />
-              <View style={styles.userIcon}>
-                <Svg width="16" height="18" viewBox="0 0 16 18" fill="none">
-                  <Path d="M14.6667 16.5V14.8333C14.6667 13.9493 14.3155 13.1014 13.6904 12.4763C13.0652 11.8512 12.2174 11.5 11.3333 11.5H4.66668C3.78262 11.5 2.93478 11.8512 2.30965 12.4763C1.68453 13.1014 1.33334 13.9493 1.33334 14.8333V16.5M11.3333 4.83333C11.3333 6.67428 9.84096 8.16667 8.00001 8.16667C6.15906 8.16667 4.66668 6.67428 4.66668 4.83333C4.66668 2.99238 6.15906 1.5 8.00001 1.5C9.84096 1.5 11.3333 2.99238 11.3333 4.83333Z" stroke="#EDE9E3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <CircleIcon style={{ marginRight: 8 }}>
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
+                  stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                />
                 </Svg>
-              </View>
-              <View style={styles.settingsIcon}>
-                <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <Path d="M10 12.5C11.3807 12.5 12.5 11.3808 12.5 10C12.5 8.61933 11.3807 7.50004 10 7.50004C8.6193 7.50004 7.50001 8.61933 7.50001 10C7.50001 11.3808 8.6193 12.5 10 12.5Z" stroke="#EDE9E3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </CircleIcon>
+
+              <CircleIcon style={{ marginRight: 8 }}>
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                  />
                 </Svg>
-              </View>
+              </CircleIcon>
+
+              <CircleIcon size={28} style={{ marginRight: 8 }}>
+              {/* User */}
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                  />
+                </Svg>
+              </CircleIcon>
+
+              <CircleIcon size={28}>
+                {/* Settings */}
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.06-.92l2.11-1.65-2-3.46-2.52.74a7.4 7.4 0 0 0-.8-.47l-.38-2.6H9.25l-.38 2.6c-.27.14-.54.3-.8.47l-2.52-.74-2 3.46 2.11 1.65a7.4 7.4 0 0 0 0 1.84L3.55 14.5l2 3.46 2.52-.74c.26.18.53.33.8.47l.38 2.6h4.34l.38-2.6c.27-.14.54-.29.8-.47l2.52.74 2-3.46-2.11-1.65c.04-.3.06-.61.06-.92Z"
+                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                  />
+                </Svg>
+              </CircleIcon>
             </View>
           </View>
           <HomeCard label="Recipes" style={styles.cardRecipes} />
           <HomeCard label="Inventory" style={styles.cardInventory} />
-          <HomeCard label="Shopping List" style={styles.cardShoppingList} />
+          <HomeCard label="Shopping List" style={styles.cardShoppingList} onPress={() => navigation.navigate('ShoppingList' as never)} />
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />
-          <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} />
+          <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('ColorBlend' as never)} />
           <HomeCard label="Measurement Converter" style={styles.cardMeasurement} />
           <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
         </View>
       </ScrollView>
     </View>
+    </>
   );
 }
 
@@ -81,7 +139,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFDF9',
-    padding: 0,
+    paddingTop: 50,
   },
   background: {
     flex: 1,
@@ -105,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   greetingRow: {
-    marginTop: 32,
+    marginTop: 36,
     marginBottom: 24,
     paddingHorizontal: 38,
   },
@@ -121,13 +179,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#1C0F0D',
     fontWeight: '400',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
-    marginBottom: 8,
+    marginBottom: 0,
   },
   notificationIcon: {
     width: 28,
@@ -176,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  cardRecipes: { marginTop: 40 },
+  cardRecipes: { marginTop: 16, },
   cardInventory: {},
   cardShoppingList: {},
   cardInspiration: {},

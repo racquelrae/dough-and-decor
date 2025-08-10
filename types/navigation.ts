@@ -6,4 +6,6 @@ export type RootStackParamList = {
   Home: undefined;
   TimerMenu: undefined;           
   Timer: { seconds: number } | undefined; 
+  ColorBlend: undefined; 
+  ShoppingList: undefined;
 };

@@ -1,25 +1,15 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { BackButton } from '../components/BackButton';
+import { RootStackParamList } from '../types/navigation';
 import { getRecentTimers, RecentTimer } from '../utils/recents';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../app/types/navigation';
+import { Stack } from 'expo-router';
 
 
 type TimerMenuNavProp = StackNavigationProp<RootStackParamList, 'TimerMenu'>;
-
-
-function BackButton() {
-  const navigation = useNavigation<TimerMenuNavProp>();
-  return (
-    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-      <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <Path d="M10.6667 5.99992H1.33333M1.33333 5.99992L6 10.6666M1.33333 5.99992L6 1.33325" stroke="#D4B2A7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </Svg>
-    </TouchableOpacity>
-  );
-}
 
 
 function AddButton() {
@@ -90,6 +80,8 @@ export default function TimerMenuScreen() {
   );
 
   return (
+    <>
+        <Stack.Screen options = {{ headerShown: false}}/>
     <View style={styles.container}>
       <BackButton />
       <Text style={styles.header}>Timer Menu</Text>
@@ -118,15 +110,15 @@ export default function TimerMenuScreen() {
       </ScrollView>
       <AddButton />
     </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFDF9', padding: 24, position: 'relative' },
-  backButton: { position: 'absolute', top: 21, left: 14, backgroundColor: 'rgba(237, 199, 186, 0.3)', borderRadius: 32, padding: 8, zIndex: 2 },
-  header: { marginTop: 64, marginLeft: 8, fontFamily: 'Inter', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
-  content: { marginTop: 48, marginHorizontal: 8 },
-  sectionTitle: { fontFamily: 'Poppins', fontSize: 20, fontWeight: '500', color: '#070417', marginBottom: 16 },
+  header: { marginTop: 110, marginLeft: 8, fontFamily: 'Inter', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
+  content: { marginTop: 24, marginHorizontal: 8 },
+  sectionTitle: { fontFamily: 'Poppins', fontSize: 20, fontWeight: '500', color: '#070417', marginBottom: 10 },
   activityCard: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(237, 199, 186, 0.3)', padding: 16, flexDirection: 'row', alignItems: 'center', position: 'relative' },
   activityCardBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(237, 199, 186, 0.3)', borderRadius: 12, zIndex: -1 },
   activityCardIcon: { marginRight: 16 },

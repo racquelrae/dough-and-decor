@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } fro
 import { Path, Svg } from 'react-native-svg';
 import { auth, db } from '../firebase/config';
 import { theme } from '../styles/theme';
+import { Stack } from 'expo-router';
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -67,6 +68,8 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
   };
 
   return (
+    <>
+      <Stack.Screen options = {{ headerShown: false}}/>
     <View style={theme.screenContainer}>
       <View style={theme.headerContainer}>
         <Text style={theme.heading}>
@@ -142,5 +145,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         </Text>
       </View>
     </View>
+    </>
   )
 }

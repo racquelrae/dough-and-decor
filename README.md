@@ -7,11 +7,59 @@ A mobile app for cookie decorators built with React Native, Firebase, and love �
 - Inventory manager 🧁
 - Measurement converters 📏
 - Recipe tracker 🍪
+- Timer with persistent state ⏱
+- Shopping list with quantity/unit selection 🛒
 - And more to come!
 
-# Welcome 
+---
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Technologies Used
+- **Frontend:** React Native (Expo Router, TypeScript)
+- **Backend Services:** Firebase Authentication, Firestore Database
+- **UI Libraries:** React Native Gesture Handler, ShadCN, Expo Haptics, SVG
+- **Version Control:** GitHub
+- **Testing:** Manual test cases and traceability mapping
+
+---
+
+## Project Structure
+DoughAndDecor/
+│
+├── app/ # Core navigation and screens
+│ ├── index.tsx # Home screen
+│ ├── timer.tsx # Timer feature
+│ ├── shoppingList.tsx # Shopping list feature
+│ ├── icingColorGuide.tsx # Icing color blending guide
+│ └── ...
+│
+├── components/ # Reusable UI components
+│ ├── BackButton.tsx
+│ ├── ColorTile.tsx
+│ └── ...
+│
+├── firebase/ # Firebase configuration and helper functions
+│ ├── config.ts
+│ ├── auth.ts
+│ ├── shoppingList.ts
+│ └── ...
+│
+├── assets/ # Images, icons, and design assets
+│
+├── tests/ # Test cases (manual and automated)
+│
+├── package.json # Dependencies and scripts
+└── README.md # Setup instructions
+
+---
+
+## Key Features Implemented
+- **User Authentication:** Sign-up, log-in, and log-out with Firebase Auth.
+- **Timer:** Persistent state between app sessions.
+- **Shopping List:** Add items with quantity/unit, swipe-to-delete, Firestore sync.
+- **Icing Color Blending Guide:** Visual color tiles with labeled names, customizable mixing ratios, and user-friendly selection interface.
+- **Navigation:** Expo Router with nested navigation for future scalability.
+
+---
 
 ## Get started
 
@@ -21,7 +69,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Create a Firebase project and add your google-services.json / config values to firebase/config.ts.
+
+3. Start the app
 
    ```bash
    npx expo start
@@ -34,28 +84,16 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Known Issues & Future Improvements
+Fine-tuning Firebase security rules for production.
 
-When you're ready, run:
+Implementing inventory and gallery features.
 
-```bash
-npm run reset-project
-```
+Expanding unit and integration test coverage.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Author
+Racquel Beebe – Master’s Capstone Project, 2025

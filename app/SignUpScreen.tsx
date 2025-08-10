@@ -6,7 +6,7 @@ import { Path, Svg } from 'react-native-svg';
 import { auth, db } from '../firebase/config';
 import { theme } from '../styles/theme';
 
-export default function SignupScreen({ navigation }) {
+export default function SignupScreen({ navigation }: { navigation: any }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -46,14 +46,18 @@ export default function SignupScreen({ navigation }) {
       Alert.alert('Success', 'Account created!');
       navigation.navigate('CompleteProfile');
     } catch (err) {
-      setError(err.message || 'Sign up failed');
+      if (err && typeof err === 'object' && 'message' in err) {
+        setError((err as { message?: string }).message || 'Sign up failed');
+      } else {
+        setError('Sign up failed');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   // Format date as DD/MM/YYYY with slashes as user types
-  const formatDOB = (text) => {
+  const formatDOB = (text: string) => {
     // Remove all non-digits
     let cleaned = text.replace(/\D/g, '');
     // Limit to 8 digits

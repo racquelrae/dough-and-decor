@@ -4,6 +4,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
+import type * as NotificationTypes from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAnchoredCountdown } from '../hooks/useAnchoredCountdown';
 import { addRecentTimer } from '../utils/recents';
@@ -109,23 +110,23 @@ export default function TimerScreen() {
 
   // One-time setup
   useEffect(() => {
-    (async () => {
-      await ensurePermissions();
-      await ensureAndroidChannel();
-    })();
-  }, []);
+  (async () => {
+    await ensurePermissions();
+    await ensureAndroidChannel();
 
-  // Start immediately with the provided duration
-  useEffect(() => {
+    // Clear any pending/delivered notifications from past runs
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await Notifications.dismissAllNotificationsAsync(); // iOS/Android: clears shown banners/center
+    } catch {}
+
+    // Show the chosen duration but keep status 'idle'
     setSecondsLeft(initialSecondsRef.current);
     reset(initialSecondsRef.current);
-    start(initialSecondsRef.current);
-    addRecentTimer(initialSecondsRef.current);
-    scheduleEndNotification(initialSecondsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  })();
+}, []);
 
-  // Persist lightweight state (optional)
+  // Persist lightweight state 
   useEffect(() => {
     AsyncStorage.setItem(
       'timerState',
@@ -138,52 +139,65 @@ export default function TimerScreen() {
   }, [secondsLeft, status]);
 
   // When user pauses/resumes/stops, manage notifications
-const scheduleEndNotification = async (durationSeconds: number) => {
-  try {
-    if (notifIdRef.current) {
-      await Notifications.cancelScheduledNotificationAsync(notifIdRef.current);
-      notifIdRef.current = null;
+  const scheduleEndNotification = async (durationSeconds: number) => {
+    try {
+      // cancel any previous single-id we may have
+      if (notifIdRef.current) {
+        await Notifications.cancelScheduledNotificationAsync(notifIdRef.current);
+        notifIdRef.current = null;
+      }
+
+      // extra safety: nuke stragglers (dev convenience)
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      const secs = Math.max(2, Math.floor(durationSeconds || 0)); // clamp to >= 2s
+      console.log('[Timer] scheduling notification in', secs, 'seconds');
+
+      const trigger = Platform.select({
+        android: { type: 'timeInterval', seconds: secs, repeats: false, channelId: 'timer-default' },
+        ios:     { type: 'timeInterval', seconds: secs, repeats: false },
+      }) as Notifications.NotificationTriggerInput;
+
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Timer finished 🎉',
+          body: `Your ${Math.round(secs / 60)}-minute timer is up.`,
+          sound: Platform.OS === 'ios' ? 'chime' : undefined,
+        },
+        trigger,
+      });
+
+      notifIdRef.current = id;
+    } catch (e) {
+      console.log('[Timer] schedule error', e);
     }
-
-    // Build the trigger per platform to satisfy the union type
-    const trigger =
-      Platform.OS === 'android'
-        ? { seconds: durationSeconds, channelId: 'timer-default' }
-        : { seconds: durationSeconds };
-
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Timer finished!',
-        body: `Your ${Math.round(durationSeconds / 60)}-minute timer is up.`,
-        sound: Platform.OS === 'ios' ? 'default' : undefined,
-      },
-      trigger: trigger as Notifications.NotificationTriggerInput,
-    });
-
-    notifIdRef.current = id;
-  } catch (e) {
-  }
-};
-
+  };
 
   const cancelEndNotification = async () => {
-    if (notifIdRef.current) {
-      try {
+    try {
+      if (notifIdRef.current) {
         await Notifications.cancelScheduledNotificationAsync(notifIdRef.current);
-      } catch {}
-      notifIdRef.current = null;
-    }
+        notifIdRef.current = null;
+      }
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch {}
   };
 
-  const handlePausePress = () => {
-    if (status === 'running') {
-      pause();
-      cancelEndNotification();
-    } else if (status === 'paused') {
-      resume();
-      scheduleEndNotification(secondsLeft);
-    }
-  };
+  const handleStartPause = async () => {
+  if (status === 'running') {
+    pause();
+    await cancelEndNotification();
+  } else if (status === 'paused') {
+    resume();
+    await scheduleEndNotification(secondsLeft);
+  } else {
+    // idle | stopped | done → start from the current display (or preset)
+    const startFrom = secondsLeft > 0 ? secondsLeft : initialSecondsRef.current;
+    start(startFrom);
+    await scheduleEndNotification(startFrom);
+    addRecentTimer(initialSecondsRef.current);
+  }
+};
 
   const handleQuitPress = async () => {
     if (status !== 'stopped') {
@@ -206,7 +220,7 @@ const scheduleEndNotification = async (durationSeconds: number) => {
   }, [status]);
 
   // UI
-  const isPaused = status === 'paused';
+  const isRunning = status === 'running'
   const isStopped = status === 'stopped';
 
   return (
@@ -239,7 +253,7 @@ const scheduleEndNotification = async (durationSeconds: number) => {
       </View>
 
       <View style={styles.buttonRow}>
-        <PauseButton isPaused={isPaused} onPress={handlePausePress} />
+        <PauseButton isPaused={!isRunning} onPress={handleStartPause} />
         <QuitButton isStopped={isStopped} onPress={handleQuitPress} />
       </View>
     </View>

@@ -34,7 +34,7 @@ export default function HomeScreen() {
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />
           <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} />
           <HomeCard label="Measurement Converter" style={styles.cardMeasurement} />
-          <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('Timer Menu' as never)} />
+          <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
         </View>
       </ScrollView>
     </View>

@@ -2,15 +2,28 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
+import { getAuth } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const [userName, setUserName] = useState<string>(''); // store the name
+
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user?.displayName) {
+      setUserName(user.displayName);
+    } else {
+      setUserName('Guest'); // fallback
+    }
+  }, []);
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={styles.background}>
           <View style={styles.greetingRow}>
-            <Text style={styles.greeting}>Hi, Test User!</Text>
+            <Text style={styles.greeting}>Hi, {userName}!</Text>
             <Text style={styles.subGreeting}>What are you creating today?</Text>
             <View style={styles.iconRow}>
               <View style={styles.notificationIcon} />

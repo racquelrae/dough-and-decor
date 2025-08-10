@@ -4,10 +4,11 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
-import type * as NotificationTypes from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAnchoredCountdown } from '../hooks/useAnchoredCountdown';
 import { addRecentTimer } from '../utils/recents';
+import { BackButton } from '../components/BackButton';
+import { Stack } from 'expo-router';
 
 // Foreground behavior (optional: show even if app is open)
 (Notifications as any).setNotificationHandler({
@@ -36,17 +37,6 @@ async function ensureAndroidChannel() {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
   }
-}
-
-function BackButton() {
-  const navigation = useNavigation();
-  return (
-    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-      <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <Path d="M10.6667 5.99992H1.33333M1.33333 5.99992L6 10.6666M1.33333 5.99992L6 1.33325" stroke="#D4B2A7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </Svg>
-    </TouchableOpacity>
-  );
 }
 
 function PauseButton({ isPaused, onPress }: { isPaused: boolean; onPress: () => void }) {
@@ -160,7 +150,7 @@ export default function TimerScreen() {
 
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Timer finished 🎉',
+          title: 'Timer finished!',
           body: `Your ${Math.round(secs / 60)}-minute timer is up.`,
           sound: Platform.OS === 'ios' ? 'chime' : undefined,
         },
@@ -224,6 +214,8 @@ export default function TimerScreen() {
   const isStopped = status === 'stopped';
 
   return (
+    <>
+        <Stack.Screen options = {{ headerShown: false}}/>
     <View style={styles.container}>
       <BackButton />
       <Text style={styles.header}>Timer</Text>
@@ -257,13 +249,13 @@ export default function TimerScreen() {
         <QuitButton isStopped={isStopped} onPress={handleQuitPress} />
       </View>
     </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFDF9', padding: 24, position: 'relative' },
-  backButton: { position: 'absolute', top: 21, left: 14, backgroundColor: 'rgba(237, 199, 186, 0.3)', borderRadius: 32, padding: 8, zIndex: 2 },
-  header: { marginTop: 64, marginLeft: 16, fontFamily: 'Inter', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
+  header: { marginTop: 90, marginLeft: 16, fontFamily: 'Inter', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
   timerCircleContainer: { marginTop: 32, marginBottom: 12, alignSelf: 'center', width: 320, height: 320, justifyContent: 'center', alignItems: 'center', position: 'relative' },
   timerText: { position: 'absolute', top: '50%', left: '50%', width: 160, height: 40, marginLeft: -80, marginTop: -20, textAlign: 'center', color: '#070417', fontFamily: 'Poppins', fontSize: 32, fontWeight: '400', letterSpacing: 2, lineHeight: 40 },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 48, marginHorizontal: 32 },

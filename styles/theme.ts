@@ -32,9 +32,9 @@ export const theme = StyleSheet.create({
     paddingTop: 40,
   },
   headerContainer: {
-    marginBottom: 24,
+    marginTop: 100,
+    marginBottom: 60,
     alignItems: 'center',
-    marginTop: 8,
   },
   formContainer: {
     width: '100%',

@@ -160,7 +160,7 @@ export default function TimerScreen() {
 
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Timer finished 🎉',
+          title: 'Timer finished!',
           body: `Your ${Math.round(secs / 60)}-minute timer is up.`,
           sound: Platform.OS === 'ios' ? 'chime' : undefined,
         },

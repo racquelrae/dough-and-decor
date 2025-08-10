@@ -40,7 +40,6 @@ DoughAndDecor/
 │
 ├── firebase/                   # Firebase configuration and helper functions
 │   ├── config.ts
-│   ├── auth.ts
 │   ├── shoppingList.ts
 │   └── ...
 │

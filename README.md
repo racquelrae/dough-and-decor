@@ -23,32 +23,35 @@ A mobile app for cookie decorators built with React Native, Firebase, and love �
 ---
 
 ## Project Structure
+```
 DoughAndDecor/
 │
-├── app/ # Core navigation and screens
-│ ├── index.tsx # Home screen
-│ ├── timer.tsx # Timer feature
-│ ├── shoppingList.tsx # Shopping list feature
-│ ├── icingColorGuide.tsx # Icing color blending guide
-│ └── ...
+├── app/                       # Core navigation and screens
+│   ├── index.tsx               # Home screen
+│   ├── timer.tsx                # Timer feature
+│   ├── shoppingList.tsx         # Shopping list feature
+│   ├── icingColorGuide.tsx      # Icing color blending guide
+│   └── ...
 │
-├── components/ # Reusable UI components
-│ ├── BackButton.tsx
-│ ├── ColorTile.tsx
-│ └── ...
+├── components/                 # Reusable UI components
+│   ├── BackButton.tsx
+│   ├── ColorTile.tsx
+│   └── ...
 │
-├── firebase/ # Firebase configuration and helper functions
-│ ├── config.ts
-│ ├── auth.ts
-│ ├── shoppingList.ts
-│ └── ...
+├── firebase/                   # Firebase configuration and helper functions
+│   ├── config.ts
+│   ├── auth.ts
+│   ├── shoppingList.ts
+│   └── ...
 │
-├── assets/ # Images, icons, and design assets
+├── assets/                     # Images, icons, and design assets
 │
-├── tests/ # Test cases (manual and automated)
+├── tests/                      # Test cases (manual and automated)
 │
-├── package.json # Dependencies and scripts
-└── README.md # Setup instructions
+├── package.json                # Dependencies and scripts
+└── README.md                   # Setup instructions
+```
+
 
 ---
 

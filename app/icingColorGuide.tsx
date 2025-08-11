@@ -17,11 +17,11 @@ export default function IcingColorGuide() {
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
         colors={[
-            "#FFF5F7",                    // softer, slightly warmer pink at the top
-            "rgba(255,245,247,0.85)",      // very gentle blush
-            "rgba(255,250,250,0.65)",      // almost white with a hint of pink
-            "rgba(255,255,255,0.35)",      // whisper white
-            "rgba(255,255,255,0)",         // fully clear
+            "#FFF5F7",                  
+            "rgba(255,245,247,0.85)",      
+            "rgba(255,250,250,0.65)",      
+            "rgba(255,255,255,0.35)",     
+            "rgba(255,255,255,0)",         
         ]}
         locations={[0, 0.12, 0.26, 0.42, 1]} 
         start={{ x: 0, y: 0 }}

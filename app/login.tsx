@@ -13,7 +13,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userRole, setUserRole] = useState(null); // For role-based UI (optional)
+  const [userRole, setUserRole] = useState(null); 
 
   // Remove Google sign-in state and effect
 
@@ -32,8 +32,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
       if (userDoc.exists()) {
         const userData = userDoc.data();
         setUserRole(userData.role || null); // Save role in state if needed
-        // You can also store userData in context or global state
-        // Example: if (userData.role === 'admin') { ... }
       }
       navigation.navigate('Home'); // Navigate to Home after successful login
     } catch (err) {

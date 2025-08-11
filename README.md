@@ -88,7 +88,48 @@ In the output, you'll find options to open the app in a
 
 ---
 
+## Development
+
+This project contains two separate Node.js projects:
+
+1. Expo Mobile App (root directory)
+
+Contains all React Native/Expo code for the Dough & Decor mobile app.
+
+Uses package.json in the root folder.
+
+Start the app:
+
+npm install
+npx expo start
+
+Environment variables are stored in a .env file (not committed to Git). See .env.example for reference.
+
+2. Firebase Cloud Functions (functions/ folder)
+
+Contains server-side code that runs on Firebase.
+
+Uses functions/package.json for its own dependencies.
+
+To run functions locally:
+
+cd functions
+npm install
+npm run serve
+
+To deploy to Firebase:
+
+cd functions
+npm run deploy
+
+Cloud Functions do not share dependencies with the Expo app — this separation is intentional.
+
+**Note**: The functions folder may be empty or partially implemented depending on the milestone. If not in use for this milestone, it is safe to ignore when running the mobile app locally.
+
+---
+
 ## Known Issues & Future Improvements
+
 Fine-tuning Firebase security rules for production.
 
 Implementing inventory and gallery features.
@@ -98,4 +139,5 @@ Expanding unit and integration test coverage.
 ---
 
 ## Author
+
 Racquel Beebe – Master’s Capstone Project, 2025

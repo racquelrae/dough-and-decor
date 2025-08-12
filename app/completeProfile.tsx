@@ -11,6 +11,11 @@ import { useUser } from '../context/UserContext';
 import { db } from '../firebase/config';
 import { theme } from '../styles/theme';
 import { logUserAuthState } from '../utils/logUserAuthState';
+import * as ImageManipulator from 'expo-image-manipulator'
+
+const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+export const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+export const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
 
 export default function CompleteProfileScreen() {
   const [username, setUsername] = useState('');
@@ -21,9 +26,6 @@ export default function CompleteProfileScreen() {
   const [usernameError, setUsernameError] = useState('');
 
   const { user } = useUser() as { user: any };
-
-  const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dwc2ifa1q/image/upload';
-  const CLOUDINARY_UPLOAD_PRESET = 'my_preset';
 
   const userTypeOptions = ['Hobbyist','Small Business Owner','Professional Baker','Student','Other'];
 
@@ -75,14 +77,34 @@ export default function CompleteProfileScreen() {
   };
 
   const uploadToCloudinary = async (imageUri: string) => {
-    const data = new FormData();
-    data.append('file', { uri: imageUri, type: 'image/jpeg', name: 'profile.jpg' } as any);
-    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
     try {
+      // optional: resize to keep uploads snappy/costs down
+      const manipulated = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 800 } }], // adjust as you like
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      const data = new FormData();
+      data.append('file', {
+        uri: manipulated.uri,
+        type: 'image/jpeg',
+        name: 'profile.jpg',
+      } as any);
+      data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
       const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: data });
       const result = await res.json();
+
+      if (!res.ok) {
+        console.log('Cloudinary upload error:', result);
+        Alert.alert('Image Upload Error', result?.error?.message ?? 'Upload failed.');
+        return null;
+      }
+
       return result.secure_url ?? null;
-    } catch {
+    } catch (err) {
+      console.log('Upload exception:', err);
       Alert.alert('Image Upload Error', 'Could not upload image.');
       return null;
     }

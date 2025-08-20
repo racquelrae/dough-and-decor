@@ -8,4 +8,5 @@ export type RootStackParamList = {
   Timer: { seconds: number } | undefined;
   IcingColorGuide: undefined;
   ShoppingList: undefined;
+  MeasurementConverter: undefined;
 };

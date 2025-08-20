@@ -110,7 +110,7 @@ export default function HomeScreen() {
           <HomeCard label="Shopping List" style={styles.cardShoppingList} onPress={() => navigation.navigate('ShoppingList' as never)} />
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />
           <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('IcingColorGuide' as never)} />
-          <HomeCard label="Measurement Converter" style={styles.cardMeasurement} />
+          <HomeCard label="Measurement Converter" style={styles.cardMeasurement} onPress={() => navigation.navigate('MeasurementConverter' as never)} />
           <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
         </View>
       </ScrollView>

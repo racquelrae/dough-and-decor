@@ -8,6 +8,7 @@ import SignUpScreen from '../app/signUp';
 import TimerScreen from '../app/timer';
 import TimerMenuScreen from '../app/timerMenu';
 import { RootStackParamList } from '../types/navigation';
+import MeasurementConverterScreen from '../app/measurementConverter';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +31,7 @@ export default function AppNavigator() {
         component={require('../app/icingColorGuide').default}
         options={{ title: 'Icing Color Guide' }} />
       <Stack.Screen name="ShoppingList" component={ShoppingListScreen} />
+    <Stack.Screen name="MeasurementConverter" component={MeasurementConverterScreen} options={{ title: 'Measurement Converter' }} />
     </Stack.Navigator>
   );
 }

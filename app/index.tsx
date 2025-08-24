@@ -105,7 +105,7 @@ export default function HomeScreen() {
               </CircleIcon>
             </View>
           </View>
-          <HomeCard label="Recipes" style={styles.cardRecipes} />
+          <HomeCard label="Recipes" style={styles.cardRecipes} onPress={() => navigation.navigate('Recipes' as never)} />
           <HomeCard label="Inventory" style={styles.cardInventory} />
           <HomeCard label="Shopping List" style={styles.cardShoppingList} onPress={() => navigation.navigate('ShoppingList' as never)} />
           <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} />

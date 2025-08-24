@@ -9,4 +9,9 @@ export type RootStackParamList = {
   IcingColorGuide: undefined;
   ShoppingList: undefined;
   MeasurementConverter: undefined;
+  Recipes: undefined;
+  NewRecipe: undefined;
+  RecipeDetails: { id: string };
+  EditRecipe: { id: string };
 };
+

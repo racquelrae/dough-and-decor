@@ -209,7 +209,7 @@ export default function MeasurementConverter() {
 
       <BackButton />
       <View style={styles.container}>
-        <Text style={styles.header}>Measurement Conversion</Text>
+        <Text style={styles.header}>Measurement Conversions</Text>
         <View style={styles.toggleRow}>
             {(["volume", "weight"] as UnitCategory[]).map((c) => {
               const active = c === category;
@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#1C0F0D",
+    textAlign: "left",
   },
 
   toggleRow: {
@@ -332,11 +333,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 12,
     marginBottom: 16,
+    marginTop: 16,
   },
   contentWrapper: {
     flex: 1,
     justifyContent: "flex-start",                               
-    paddingTop: 8,                                              
+    paddingTop: 12,                                              
   },
   toggleChip: {
     paddingHorizontal: 18,
@@ -356,6 +358,7 @@ const styles = StyleSheet.create({
     color: "#2B1E1A",
   },
   panel: {
+    marginTop: 16,
     paddingVertical: 24,
     paddingHorizontal: 20,
     borderRadius: 24,

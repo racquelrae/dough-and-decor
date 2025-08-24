@@ -255,7 +255,7 @@ export default function TimerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFDF9', padding: 24, position: 'relative' },
-  header: { marginTop: 90, marginLeft: 16, fontFamily: 'Inter', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
+  header: { marginTop: 90, marginLeft: 16, fontFamily: 'Poppins', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
   timerCircleContainer: { marginTop: 32, marginBottom: 12, alignSelf: 'center', width: 320, height: 320, justifyContent: 'center', alignItems: 'center', position: 'relative' },
   timerText: { position: 'absolute', top: '50%', left: '50%', width: 160, height: 40, marginLeft: -80, marginTop: -20, textAlign: 'center', color: '#070417', fontFamily: 'Poppins', fontSize: 32, fontWeight: '400', letterSpacing: 2, lineHeight: 40 },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 48, marginHorizontal: 32 },

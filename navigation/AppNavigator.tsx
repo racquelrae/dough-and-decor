@@ -15,6 +15,9 @@ import TimerScreen from '@/app/timer';
 import TimerMenuScreen from '@/app/timerMenu';
 import InspirationGalleryScreen from '@/app/gallery';
 import { RootStackParamList } from '@/types/navigation';
+import InventoryIndex from '@/app/inventory';
+import InventoryEdit from '@/app/inventory/[id]/edit';
+import InventoryNew from '@/app/inventory/new';
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,6 +40,9 @@ export default function AppNavigator() {
       <Stack.Screen name="ShoppingList" component={ShoppingListScreen} options={{headerShown: false}} />
       <Stack.Screen name="MeasurementConverter" component={MeasurementConverterScreen} options={{headerShown: false}} />
       <Stack.Screen name="InspirationGallery" component={InspirationGalleryScreen} options={{headerShown: false}} />
+      <Stack.Screen name="Inventory" component={InventoryIndex} options={{ headerShown: false }} />
+      <Stack.Screen name="InventoryEdit" component={InventoryEdit} options={{ presentation: "modal",headerShown: false }} />
+      <Stack.Screen name="InventoryNew" component={InventoryNew} options={{ presentation:"modal", headerShown: false }} />
     </Stack.Navigator>
   );
 }

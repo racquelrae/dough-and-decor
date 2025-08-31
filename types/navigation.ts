@@ -14,5 +14,8 @@ export type RootStackParamList = {
   RecipeDetails: { id: string };
   EditRecipe: { id: string };
   InspirationGallery: undefined;
+  Inventory: undefined;
+  InventoryEdit: { id: string, categoryId: string };
+  InventoryNew: { categoryId: string };
 };
 

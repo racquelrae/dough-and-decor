@@ -10,11 +10,6 @@ import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { db } from "@/firebase/config";
 
-    const recipes = [
-    { id: "1", title: "Sugar Cookies", time: "30min", image: require("../../assets/images/cookies.jpg") },
-    { id: "2", title: "Royal Icing", time: "15min", image: require("../../assets/images/icing.jpg") },
-];
-
 export function useRecipes() {
   const [data, setData] = useState<{ id: string; title: string; time: string; photo?: string|null }[]>([]);
   useEffect(() => {

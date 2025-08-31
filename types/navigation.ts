@@ -13,5 +13,6 @@ export type RootStackParamList = {
   NewRecipe: undefined;
   RecipeDetails: { id: string };
   EditRecipe: { id: string };
+  InspirationGallery: undefined;
 };
 

@@ -1,19 +1,21 @@
 import IcingColorGuide from '@/app/icingColorGuide';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CompleteProfileScreen from '../app/completeProfile';
-import HomeScreen from '../app/index';
-import LaunchScreen from '../app/launch';
-import LoginScreen from '../app/login';
-import MeasurementConverterScreen from '../app/measurementConverter';
-import RecipeDetail from '../app/recipes/[id]';
-import RecipesScreen from '../app/recipes/index';
-import NewRecipe from '../app/recipes/new';
-import EditRecipe from '../app/recipes/edit';
-import ShoppingListScreen from '../app/shoppingList';
-import SignUpScreen from '../app/signUp';
-import TimerScreen from '../app/timer';
-import TimerMenuScreen from '../app/timerMenu';
-import { RootStackParamList } from '../types/navigation';
+import CompleteProfileScreen from '@/app/completeProfile';
+import HomeScreen from '@/app/index';
+import LaunchScreen from '@/app/launch';
+import LoginScreen from '@/app/login';
+import MeasurementConverterScreen from '@/app/measurementConverter';
+import RecipeDetail from '@/app/recipes/[id]';
+import RecipesScreen from '@/app/recipes/index';
+import NewRecipe from '@/app/recipes/new';
+import EditRecipe from '@/app/recipes/edit';
+import ShoppingListScreen from '@/app/shoppingList';
+import SignUpScreen from '@/app/signUp';
+import TimerScreen from '@/app/timer';
+import TimerMenuScreen from '@/app/timerMenu';
+import InspirationGalleryScreen from '@/app/gallery';
+import { RootStackParamList } from '@/types/navigation';
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,6 +36,7 @@ export default function AppNavigator() {
       <Stack.Screen name="IcingColorGuide" component={IcingColorGuide} options={{headerShown: false}} />
       <Stack.Screen name="ShoppingList" component={ShoppingListScreen} options={{headerShown: false}} />
       <Stack.Screen name="MeasurementConverter" component={MeasurementConverterScreen} options={{headerShown: false}} />
+      <Stack.Screen name="InspirationGallery" component={InspirationGalleryScreen} options={{headerShown: false}} />
     </Stack.Navigator>
   );
 }

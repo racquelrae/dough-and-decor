@@ -57,9 +57,10 @@ export default function PrivacyPolicyScreen() {
           We may update this Privacy Policy from time to time. Significant
           changes will be communicated in-app.{"\n\n"}
           -{"\n\n"}
-          Contact Us{"\n"}
-          If you have questions about this Privacy Policy, please email:{"\n"}
-          📧 racquelrbeebe@gmail.com{"\n\n"}
+          📧 Contact Us{"\n"}
+          If you have questions about this Privacy Policy, please email:
+           racquelrbeebe@gmail.com{"\n\n"}
+          🍪 Thank you for trusting Dough & Decor!{"\n\n"}
         </Text>
       </ScrollView>
     </View>

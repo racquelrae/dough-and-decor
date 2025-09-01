@@ -1,7 +1,8 @@
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
-import { doc, setDoc } from 'firebase/firestore';
-import { useState } from 'react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword } from 'firebase/auth';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView,
   Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
@@ -11,21 +12,86 @@ import { useUser } from '../context/UserContext';
 import { db } from '../firebase/config';
 import { theme } from '../styles/theme';
 import { logUserAuthState } from '../utils/logUserAuthState';
-import * as ImageManipulator from 'expo-image-manipulator'
+import * as ImageManipulator from 'expo-image-manipulator';
+import { useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
+import Toast from '@/components/Toast';
+import * as Haptics from 'expo-haptics';
 
 const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME!;
 export const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 export const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
 
 export default function CompleteProfileScreen() {
+  const route = useRoute<RouteProp<RootStackParamList, "UpdateProfile">>();
+  const mode: "create" | "edit" = route?.params?.mode ?? "create";
   const [username, setUsername] = useState('');
   const [userType, setUserType] = useState('');
   const [customType, setCustomType] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [toast, setToast] = useState("");
 
   const { user } = useUser() as { user: any };
+
+  const auth = getAuth();
+  async function reauthWithPassword(currentPassword: string) {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error('No authenticated user.');
+    }
+    const cred = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, cred);
+  }
+
+  // Modals
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  // Change Email fields
+  const [newEmail, setNewEmail] = useState('');
+  const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState('');
+  const [changingEmail, setChangingEmail] = useState(false);
+
+  // Change Password fields
+  const [newPassword, setNewPassword] = useState('');
+  const [currentPasswordForPassword, setCurrentPasswordForPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Track existing photo (from Firestore prefill)
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+
+  // Prefill when editing
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (mode !== "edit" || !user) return;
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const data = snap.data();
+        if (!cancelled && data) {
+          setUsername((data.username ?? "").toString());
+          // if you stored the “description” field:
+          const desc = (data.description ?? "") as string;
+          // If desc matches one of your options, pick it; otherwise treat as custom
+          const options = ['Hobbyist','Small Business Owner','Professional Baker','Student'];
+          if (options.includes(desc)) {
+            setUserType(desc);
+            setCustomType("");
+          } else if (desc) {
+            setUserType("Other");
+            setCustomType(desc);
+          }
+          setImage(data.photo ?? null);
+          setExistingPhotoUrl(data.photo ?? null);
+        }
+      } catch (e) {
+        console.log("Prefill error:", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [mode, user]);
 
   const userTypeOptions = ['Hobbyist','Small Business Owner','Professional Baker','Student','Other'];
 
@@ -137,10 +203,12 @@ export default function CompleteProfileScreen() {
 
       console.log('Writing to Firestore with setDoc:', updateData);
       await setDoc(userRef, updateData, { merge: true });
-      Alert.alert('Success', 'Profile updated!');
+      setToast("Profile updated!");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.log('Profile update error:', e);
-      Alert.alert('Error', 'Could not update profile.');
+      setToast("Update failed.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);
     }
@@ -155,25 +223,70 @@ export default function CompleteProfileScreen() {
     }
   };
 
-  const handleMinimalUpdate = async () => {
-    if (!user) {
-      Alert.alert('Not logged in', 'You must be logged in to update your profile.');
-      return;
+  async function handleChangeEmail() {
+    if (!auth.currentUser) return Alert.alert('Error', 'Not logged in.');
+    if (!newEmail || !currentPasswordForEmail) {
+      return Alert.alert('Missing Info', 'Please enter your current password and a new email.');
     }
     try {
-      await setDoc(doc(db, 'users', user.uid), { testField: 'test' }, { merge: true });
-      Alert.alert('Success', 'Minimal update succeeded!');
+      setChangingEmail(true);
+      await reauthWithPassword(currentPasswordForEmail);
+      await updateEmail(auth.currentUser, newEmail.trim());
+      setShowChangeEmail(false);
+      setNewEmail('');
+      setCurrentPasswordForEmail('');
+      Alert.alert('Success', 'Your email has been updated.');
     } catch (e: any) {
-      Alert.alert('Error', 'Minimal update failed: ' + (e?.message || ''));
+      console.log('Update email error:', e);
+      Alert.alert('Error', e?.message || 'Could not update email.');
+    } finally {
+      setChangingEmail(false);
     }
-  };
+  }
+
+  async function handleChangePassword() {
+    if (!auth.currentUser) return Alert.alert('Error', 'Not logged in.');
+    if (!newPassword || !currentPasswordForPassword) {
+      return Alert.alert('Missing Info', 'Please enter your current and new password.');
+    }
+    try {
+      setChangingPassword(true);
+      await reauthWithPassword(currentPasswordForPassword);
+      await updatePassword(auth.currentUser, newPassword);
+      setShowChangePassword(false);
+      setNewPassword('');
+      setCurrentPasswordForPassword('');
+      Alert.alert('Success', 'Your password has been updated.');
+    } catch (e: any) {
+      console.log('Update password error:', e);
+      Alert.alert('Error', e?.message || 'Could not update password.');
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
+  async function handleRemovePhoto() {
+    if (!user) return Alert.alert('Not logged in', 'You must be logged in to update your profile.');
+    try {
+      setLoading(true);
+      await setDoc(doc(db, 'users', user.uid), { photo: null }, { merge: true });
+      setImage(null);
+      setExistingPhotoUrl(null);
+      Alert.alert('Removed', 'Profile photo removed.');
+    } catch (e: any) {
+      console.log('Remove photo error:', e);
+      Alert.alert('Error', e?.message || 'Could not remove photo.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View style={theme.screenContainer}>
           <View style={theme.headerContainer}>
-            <Text style={theme.heading}>Complete Your Profile</Text>
+            <Text style={theme.heading}>{mode === "edit" ? "Edit Your Profile" : "Complete Your Profile"}</Text>
           </View>
 
           <View style={theme.formContainer}>
@@ -198,9 +311,20 @@ export default function CompleteProfileScreen() {
               </View>
 
               <TouchableOpacity style={styles.uploadBtn} activeOpacity={0.7} onPress={showImagePickerOptions}>
-                <Text style={theme.link}>{image ? 'Change Profile Picture' : 'Upload Profile Picture'}</Text>
+                <Text style={theme.link}>{image || existingPhotoUrl ? 'Change Profile Picture' : 'Upload Profile Picture'}</Text>
               </TouchableOpacity>
             </View>
+
+            {(image || existingPhotoUrl) && (
+              <TouchableOpacity
+                style={{ marginTop: 6 }}
+                activeOpacity={0.7}
+                onPress={handleRemovePhoto}
+                disabled={loading}
+              >
+                <Text style={[theme.link, { color: '#c06' }]}>Remove Photo</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={theme.formContainer}>
               <Text style={theme.label}>Username</Text>
@@ -244,17 +368,120 @@ export default function CompleteProfileScreen() {
               )}
             </View>
 
+            <View style={[theme.buttonRow, { marginTop: 12 }]}>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#8a6e63' }]}
+                onPress={() => setShowChangeEmail(true)}
+              >
+                <Text style={theme.buttonText}>Change Email</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[theme.buttonRow, { marginTop: 8 }]}>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#8a6e63' }]}
+                onPress={() => setShowChangePassword(true)}
+              >
+                <Text style={theme.buttonText}>Change Password</Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={theme.buttonRow}>
               <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0 }]} onPress={handleContinue} disabled={loading}>
-                <Text style={theme.buttonText}>{loading ? 'Saving...' : 'Continue'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#aaa' }]} onPress={handleMinimalUpdate} disabled={loading}>
-                <Text style={theme.buttonText}>Minimal Update</Text>
+                <Text style={theme.buttonText}>  
+                  {loading ? (mode === "edit" ? "Saving..." : "Saving...") : (mode === "edit" ? "Save Changes" : "Continue")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </ScrollView>
+
+      {/* Change Email Modal */}
+      {showChangeEmail && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={[theme.heading, { fontSize: 18, marginBottom: 8 }]}>Change Email</Text>
+            <TextInput
+              style={theme.textInput}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="New email"
+              placeholderTextColor="#1C0F0D55"
+              value={newEmail}
+              onChangeText={setNewEmail}
+            />
+            <TextInput
+              style={theme.textInput}
+              secureTextEntry
+              placeholder="Current password"
+              placeholderTextColor="#1C0F0D55"
+              value={currentPasswordForEmail}
+              onChangeText={setCurrentPasswordForEmail}
+            />
+
+            <View style={theme.buttonRow}>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, backgroundColor: '#eee' }]}
+                onPress={() => setShowChangeEmail(false)}
+                disabled={changingEmail}
+              >
+                <Text style={[theme.buttonText, { color: '#444' }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, backgroundColor: '#8a6e63' }]}
+                onPress={handleChangeEmail}
+                disabled={changingEmail}
+              >
+                <Text style={theme.buttonText}>{changingEmail ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={[theme.heading, { fontSize: 18, marginBottom: 8 }]}>Change Password</Text>
+            <TextInput
+              style={theme.textInput}
+              secureTextEntry
+              placeholder="Current password"
+              placeholderTextColor="#1C0F0D55"
+              value={currentPasswordForPassword}
+              onChangeText={setCurrentPasswordForPassword}
+            />
+            <TextInput
+              style={theme.textInput}
+              secureTextEntry
+              placeholder="New password"
+              placeholderTextColor="#1C0F0D55"
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+
+            <View style={theme.buttonRow}>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, backgroundColor: '#eee' }]}
+                onPress={() => setShowChangePassword(false)}
+                disabled={changingPassword}
+              >
+                <Text style={[theme.buttonText, { color: '#444' }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[theme.button, { flex: 1, backgroundColor: '#8a6e63' }]}
+                onPress={handleChangePassword}
+                disabled={changingPassword}
+              >
+                <Text style={theme.buttonText}>{changingPassword ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      {toast !== "" && <Toast message={toast} onHide={() => setToast("")} />}
     </KeyboardAvoidingView>
   );
 }
@@ -267,8 +494,8 @@ const styles = StyleSheet.create({
   personIconWrapper: { width: 42, height: 60, alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 20, left: 30 },
   headerSection: { width: '100%', alignItems: 'flex-start', marginBottom: 16 },
   uploadBtn: { marginTop: 8, marginBottom: 8 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
-  modalContent: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: 350 },
+  modalOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }, 
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
   modalItem: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
   modalItemText: { fontSize: 18, color: '#1C0F0D' },
 });

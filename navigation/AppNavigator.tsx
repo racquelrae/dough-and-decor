@@ -1,6 +1,6 @@
 import IcingColorGuide from '@/app/icingColorGuide';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CompleteProfileScreen from '@/app/completeProfile';
+import CompleteProfileScreen from '@/app/updateProfile';
 import HomeScreen from '@/app/index';
 import LaunchScreen from '@/app/launch';
 import LoginScreen from '@/app/login';
@@ -18,6 +18,8 @@ import { RootStackParamList } from '@/types/navigation';
 import InventoryIndex from '@/app/inventory';
 import InventoryEdit from '@/app/inventory/[id]/edit';
 import InventoryNew from '@/app/inventory/new';
+import SettingsScreen from '@/app/settings';
+import PrivacyPolicyScreen from '@/app/privacyPolicy';
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -28,7 +30,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Launch" component={LaunchScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{headerShown: false}} />
       <Stack.Screen name="Signup" component={SignUpScreen} options={{headerShown: false}} />
-      <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} options={{headerShown: false}} />
       <Stack.Screen name="Recipes" component={RecipesScreen} options={{headerShown: false}} />
       <Stack.Screen name="RecipeDetails" component={RecipeDetail} options={{headerShown: false}} />
       <Stack.Screen name="NewRecipe" component={NewRecipe} options={{headerShown: false}} />
@@ -43,6 +44,9 @@ export default function AppNavigator() {
       <Stack.Screen name="Inventory" component={InventoryIndex} options={{ headerShown: false }} />
       <Stack.Screen name="InventoryEdit" component={InventoryEdit} options={{ presentation: "modal",headerShown: false }} />
       <Stack.Screen name="InventoryNew" component={InventoryNew} options={{ presentation:"modal", headerShown: false }} />
+      <Stack.Screen name="UpdateProfile" component={CompleteProfileScreen} options={{headerShown: false}} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{headerShown: false}} />
     </Stack.Navigator>
   );
 }

@@ -65,45 +65,6 @@ export default function HomeScreen() {
           <View style={styles.greetingRow}>
             <Text style={styles.greeting}>Hi, {userName}!</Text>
             <Text style={styles.subGreeting}>What are you creating today?</Text>
-            <View style={styles.iconRow}>
-              <CircleIcon style={{ marginRight: 8 }}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
-                  stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-                />
-                </Svg>
-              </CircleIcon>
-
-              <CircleIcon style={{ marginRight: 8 }}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-                  />
-                </Svg>
-              </CircleIcon>
-
-              <CircleIcon size={28} style={{ marginRight: 8 }}>
-              {/* User */}
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-                  />
-                </Svg>
-              </CircleIcon>
-
-              <CircleIcon size={28}>
-                {/* Settings */}
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.06-.92l2.11-1.65-2-3.46-2.52.74a7.4 7.4 0 0 0-.8-.47l-.38-2.6H9.25l-.38 2.6c-.27.14-.54.3-.8.47l-2.52-.74-2 3.46 2.11 1.65a7.4 7.4 0 0 0 0 1.84L3.55 14.5l2 3.46 2.52-.74c.26.18.53.33.8.47l.38 2.6h4.34l.38-2.6c.27-.14.54-.29.8-.47l2.52.74 2-3.46-2.11-1.65c.04-.3.06-.61.06-.92Z"
-                    stroke="#FFFDF9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-                  />
-                </Svg>
-              </CircleIcon>
-            </View>
           </View>
           <HomeCard label="Recipes" style={styles.cardRecipes} onPress={() => navigation.navigate('Recipes' as never)} />
           <HomeCard label="Inventory" style={styles.cardInventory} onPress={() => navigation.navigate('Inventory' as never)} />
@@ -112,6 +73,7 @@ export default function HomeScreen() {
           <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('IcingColorGuide' as never)} />
           <HomeCard label="Measurement Converter" style={styles.cardMeasurement} onPress={() => navigation.navigate('MeasurementConverter' as never)} />
           <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
+          <HomeCard label="Settings" style={styles.cardSettings} onPress={() => navigation.navigate('Settings' as never)} />
         </View>
       </ScrollView>
     </View>
@@ -181,39 +143,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginBottom: 12,
   },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 0,
-  },
-  notificationIcon: {
-    width: 28,
-    height: 28,
-    backgroundColor: '#BB9D93',
-    borderRadius: 14,
-    marginRight: 8,
-  },
-  searchIcon: {
-    width: 28,
-    height: 28,
-    backgroundColor: '#BB9D93',
-    borderRadius: 14,
-    marginRight: 8,
-  },
-  userIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingsIcon: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   homeCard: {
     backgroundColor: '#EDC7BA',
     marginHorizontal: 50,
@@ -234,11 +163,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  cardRecipes: { marginTop: 16, },
+  cardRecipes: { marginTop: 6, },
   cardInventory: {},
   cardShoppingList: {},
   cardInspiration: {},
   cardIcingGuide: {},
   cardMeasurement: {},
   cardTimer: {},
+  cardSettings:{}
 });

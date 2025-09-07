@@ -16,7 +16,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
-import Toast from '@/components/Toast';
+import { ToastHost, showToast } from '@/components/Toast';
 import * as Haptics from 'expo-haptics';
 
 const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME!;
@@ -32,7 +32,6 @@ export default function CompleteProfileScreen() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
-  const [toast, setToast] = useState("");
 
   const { user } = useUser() as { user: any };
 
@@ -203,11 +202,11 @@ export default function CompleteProfileScreen() {
 
       console.log('Writing to Firestore with setDoc:', updateData);
       await setDoc(userRef, updateData, { merge: true });
-      setToast("Profile updated!");
+      showToast("Profile updated!");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.log('Profile update error:', e);
-      setToast("Update failed.");
+      showToast("Update failed.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);
@@ -481,7 +480,7 @@ export default function CompleteProfileScreen() {
           </View>
         </View>
       )}
-      {toast !== "" && <Toast message={toast} onHide={() => setToast("")} />}
+        <ToastHost />
     </KeyboardAvoidingView>
   );
 }

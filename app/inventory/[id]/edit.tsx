@@ -25,6 +25,8 @@ export default function InventoryEdit() {
         imageUrl: data.imageUrl ?? null,
         thumbUrl: data.thumbUrl ?? null,
         notes: data.notes ?? "",
+        autoAddToList: !!data.autoAddToList,
+        min: (data.min === 0 || data.min) ? Number(data.min) : null,
       });
     })();
   }, [categoryId, id]);
@@ -32,12 +34,14 @@ export default function InventoryEdit() {
   const handleSubmit = async (v: ItemFormValues) => {
     await updateItem(categoryId, id, {
       name: v.name,
-      quantity: v.quantity,
+      quantity: v.quantity ?? 0,
       expires: v.expires,
       expiryDate: v.expires && v.expiryDate ? Timestamp.fromDate(v.expiryDate) : null,
       imageUrl: v.imageUrl ?? "",
       thumbUrl: v.thumbUrl ?? "",
       notes: v.notes ?? "",
+      autoAddToList: !!v.autoAddToList,
+      min: v.autoAddToList ? (v.min ?? 0) : null,
     });
   navigation.goBack();
   };

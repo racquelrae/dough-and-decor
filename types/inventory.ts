@@ -1,23 +1,37 @@
-export type CategoryType = "cookie_cutters" | "ingredients" | "custom" | "other";
+// types/inventory.ts
 
-export interface InventoryCategory {
+export type InventoryCategory = {
   id: string;
   name: string;
   type: CategoryType;
   order: number;
   createdAt?: any;
   updatedAt?: any;
-}
+};
 
-export interface InventoryItem {
+export type CategoryType = "cookie_cutters" | "ingredients" | "other" | "custom";
+
+export type InventoryItem = {
   id: string;
   name: string;
   quantity: number;
-  imageUrl?: string;
-  thumbUrl?: string;
+
+  // Images
+  imageUrl?: string | null;
+  thumbUrl?: string | null;
+
+  // Expiry
   expires?: boolean;
-  expiryDate?: any; // firestore Timestamp
+  expiryDate?: any | null;
+
+  // Notes
   notes?: string;
+
+  // Auto-add shopping list support
+  min?: number | null;             // threshold for “low”
+  autoAddToList?: boolean;  // toggle on/off
+
+  // Metadata
   createdAt?: any;
   updatedAt?: any;
-}
+};

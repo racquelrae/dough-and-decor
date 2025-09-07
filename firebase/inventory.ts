@@ -72,6 +72,9 @@ export async function addItem(categoryId: string, data: Partial<InventoryItem>) 
     expires: data.expires ?? false,
     expiryDate: data.expiryDate ?? null,
     notes: data.notes ?? "",
+    min: data.min ?? null,
+    autoAddToList: data.autoAddToList ?? false,
+
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

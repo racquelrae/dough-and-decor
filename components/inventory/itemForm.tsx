@@ -9,11 +9,18 @@ export type ItemFormValues = {
   name: string;
   quantity: number;
   expires: boolean;
-  expiryDate?: Date | null;
+  expiryDate: Date | null;
   imageUrl?: string | null;
   thumbUrl?: string | null;
   notes?: string;
+  autoAddToList: boolean;   // toggle
+  min: number | null;       // threshold
 };
+
+function clampIntOrNull(s: string) {
+  const n = Number(s.replace(/[^0-9]/g, ""));
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+}
 
 export function ItemForm({
   mode,                     // "create" | "edit"
@@ -38,6 +45,8 @@ export function ItemForm({
   const [dateOpen, setDateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [autoAddToList, setAutoAddToList] = useState(initial?.autoAddToList ?? false);
+  const [min, setMin] = useState<number | null>(initial?.min ?? null);
 
   useEffect(() => {
     if (!initial) return;
@@ -49,6 +58,12 @@ export function ItemForm({
     setThumbUrl(initial.thumbUrl ?? null);
     setNotes(initial.notes ?? "");
     setDateOpen(false);
+    setAutoAddToList(!!initial.autoAddToList);
+    setMin(
+      initial.min === 0 || typeof initial.min === "number"
+        ? Math.max(0, Math.floor(Number(initial.min)))
+        : null
+);
   }, [initial]);
 
   const pick = async () => {
@@ -80,6 +95,8 @@ export function ItemForm({
         imageUrl: imageUrl ?? null,
         thumbUrl: thumbUrl ?? null,
         notes,
+        autoAddToList,
+        min: autoAddToList ? (min ?? 0) : null,
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } finally {
@@ -157,6 +174,35 @@ export function ItemForm({
             <Text style={{ marginHorizontal: 10, minWidth: 20, textAlign: "center" }}>{qty}</Text>
             <Pressable onPress={() => setQty(q => q + 1)} style={styles.qtyBtn}><Text>+</Text></Pressable>
           </View>
+        </View>
+
+        {/* Auto-add when low */}
+        <View style={styles.inline}>
+        <Text style={styles.label}>Auto-add when low</Text>
+        <Switch
+            value={autoAddToList}
+            onValueChange={(v) => {
+            Haptics.selectionAsync();
+            setAutoAddToList(v);
+            if (!v) setMin(null); // turning off clears threshold
+            }}
+        />
+        </View>
+
+        {/* Low stock threshold */}
+        <View style={[styles.field, { opacity: autoAddToList ? 1 : 0.5 }]}>
+        <Text style={styles.label}>Low stock threshold (min)</Text>
+        <TextInput
+            editable={autoAddToList}
+            keyboardType="number-pad"
+            placeholder="e.g., 2"
+            value={min == null ? "" : String(min)}
+            onChangeText={(t) => setMin(clampIntOrNull(t))}
+            style={styles.input}
+        />
+        <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>
+            When quantity ≤ min, this item is considered “low” and will be added to your shopping list.
+        </Text>
         </View>
 
         {/* Expiry */}

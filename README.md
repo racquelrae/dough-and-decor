@@ -26,12 +26,22 @@ A mobile app for cookie decorators built with React Native, Firebase, and love �
 ```
 DoughAndDecor/
 │
-├── app/                       # Core navigation and screens
-│   ├── index.tsx               # Home screen
-│   ├── timer.tsx                # Timer feature
-│   ├── shoppingList.tsx         # Shopping list feature
-│   ├── icingColorGuide.tsx      # Icing color blending guide
-│   └── ...
+├── app/                        # Core navigation and screens 
+│   ├── recipes/ 		           # Recipes feature 
+│   ├── inventory/		        # Inventory feature 
+│   ├── gallery.tsx             # Inspiration gallery feature  
+│   ├── icingColorGuide.tsx     # Icing Color Blending Guide feature 
+│   ├── index.tsx               # Home screen 
+│   ├── launch.tsx              # Launch screen 
+│   ├── login.tsx               # Login screen 
+│   ├── measurementConverter.tsx   # Measurement Conversion feature 
+│   ├── privacyPolicy.tsx 	     # Privacy Policy screen 
+│   ├── settings.tsx		        # Settings Screen 
+│   ├── shoppingList.tsx        # Shopping list feature 
+│   ├── signUp.tsx              # Sign-Up screen 
+│   ├── timer.tsx               # Timer feature 
+│   ├── timerMenu.tsx           # Timer menu screen 
+│   └── updateProfile.tsx       # Update Profile screen 
 │
 ├── components/                 # Reusable UI components
 │   ├── BackButton.tsx
@@ -56,10 +66,14 @@ DoughAndDecor/
 
 ## Key Features Implemented
 - **User Authentication:** Sign-up, log-in, and log-out with Firebase Auth.
+- **Navigation:** Expo Router with nested navigation for future scalability.
 - **Timer:** Persistent state between app sessions.
 - **Shopping List:** Add items with quantity/unit, swipe-to-delete, Firestore sync.
 - **Icing Color Blending Guide:** Visual color tiles with labeled names, customizable mixing ratios, and user-friendly selection interface.
-- **Navigation:** Expo Router with nested navigation for future scalability.
+- **Inventory Manager:** CRUD operations for items, quantity adjustments, low-stock threshold indicators, and auto-add to shopping list 
+- **Measurement Conversions:** Unit converter for baking measurements 
+- **Recipe Manager:** Full CRUD for recipes with ingredients, steps, yield, and optional images. 
+- **Inspiration Gallery:** Upload, view, and delete images with Firestore metadata and secure storage paths 
 
 ---
 

@@ -1,13 +1,15 @@
+import { ToastHost, showToast } from '@/components/Toast';
 import { deleteItem, updateItem } from "@/firebase/inventory";
+import { addItem } from "@/firebase/shoppingList";
 import type { InventoryItem } from "@/types/inventory";
 import type { RootStackParamList } from "@/types/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
+import { getAuth } from "firebase/auth";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { ToastHost, showToast } from '@/components/Toast';
 
 export function ItemRow({ item, categoryId }: { item: InventoryItem; categoryId: string }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -57,6 +59,14 @@ export function ItemRow({ item, categoryId }: { item: InventoryItem; categoryId:
             if (item.autoAddToList && typeof item.min === "number" && next <= item.min && curr > item.min) {
               showToast(`Added “${item.name}” to your shopping list`);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                // Add to shopping list in Firestore
+                const uid = getAuth().currentUser?.uid;
+                if (uid) {
+                  await addItem(uid, {
+                    title: item.name,
+                    quantity: 1, // default to 1 when auto-adding
+                  });
+                }
             }
 
             await updateItem(categoryId, item.id, { quantity: next });
@@ -77,7 +87,7 @@ export function ItemRow({ item, categoryId }: { item: InventoryItem; categoryId:
       </Pressable>
 
       <Pressable
-        onLongPress={async () => { await deleteItem(categoryId, item.id); }}
+        onPress={async () => { await deleteItem(categoryId, item.id); }}
         style={[rowStyles.chip, { marginLeft: 8 }]}
       >
         <Ionicons name="trash-outline" size={16} />

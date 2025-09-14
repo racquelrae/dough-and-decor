@@ -11,7 +11,7 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
-      bundleIdentifier: "com.doughanddecor.app", // <-- Add this line!
+      bundleIdentifier: "com.doughanddecor.app",
       supportsTablet: true,
       infoPlist: {
         NSPhotoLibraryUsageDescription: "Allow access to your photo library to upload a profile picture.",
@@ -20,7 +20,7 @@ export default {
       }
     },
     android: {
-      package: "com.yourname.doughanddecor", // <-- Add this line!
+      package: "com.yourname.doughanddecor",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"

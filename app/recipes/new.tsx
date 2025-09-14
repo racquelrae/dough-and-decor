@@ -176,7 +176,7 @@ export default function NewRecipe() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={insets.top + 60} // adjust if your BackButton/header is taller/shorter
+      keyboardVerticalOffset={insets.top + 60} 
     >
     <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 240 }]} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"} showsVerticalScrollIndicator={false}>
       <BackButton />

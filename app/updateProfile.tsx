@@ -71,9 +71,7 @@ export default function CompleteProfileScreen() {
         const data = snap.data();
         if (!cancelled && data) {
           setUsername((data.username ?? "").toString());
-          // if you stored the “description” field:
           const desc = (data.description ?? "") as string;
-          // If desc matches one of your options, pick it; otherwise treat as custom
           const options = ['Hobbyist','Small Business Owner','Professional Baker','Student'];
           if (options.includes(desc)) {
             setUserType(desc);

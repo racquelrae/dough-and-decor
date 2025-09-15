@@ -11,6 +11,7 @@ import { Circle, Path, Svg } from 'react-native-svg';
 import { useUser } from '../context/UserContext';
 import { db } from '../firebase/config';
 import { theme } from '../styles/theme';
+import { BackButton } from '@/components/BackButton';
 import { logUserAuthState } from '../utils/logUserAuthState';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useRoute } from '@react-navigation/native';
@@ -282,6 +283,7 @@ export default function CompleteProfileScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View style={theme.screenContainer}>
+          < BackButton />
           <View style={theme.headerContainer}>
             <Text style={theme.heading}>{mode === "edit" ? "Edit Your Profile" : "Complete Your Profile"}</Text>
           </View>

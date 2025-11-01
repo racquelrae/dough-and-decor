@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useEffect } from 'react';
-import { Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import CookieRollIn from './cookieRollIn';
 
 export default function LaunchScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -9,58 +11,53 @@ export default function LaunchScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace('Login');
-    }, 2000);
+    }, 3200);
 
     return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
-    <View style={styles.LaunchContainer}>
-      <View style={styles.imageCircle}>
-        <ImageBackground
-          style={styles.image1}
-          source={{ uri: 'https://www.nicepng.com/png/detail/5-50567_cookie-vector-png-clipart-transparent-download-black-and.png'}}
-          imageStyle={{ borderRadius: width * 0.2 }}
-          resizeMode="contain"
-        />
+    <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+      <View style={styles.content}>
+        <CookieRollIn size={cookieSize} style={styles.cookie} />
+        <Text style={styles.doughDecor}>Dough & Decor</Text>
+        <Text style={styles.tagline}>Bake beautifully, every batch.</Text>
       </View>
-      <Text style={styles.doughDecor}>Dough & Decor</Text>
-    </View>
+    </LinearGradient>
   );
 }
 
-const { width, height } = Dimensions.get('window');
-const circleSize = width * 0.4 + 5;
+const { width } = Dimensions.get('window');
+const cookieSize = Math.min(width * 0.55, 260);
 
 const styles = StyleSheet.create({
-  LaunchContainer: {
+  gradient: {
     flex: 1,
-    backgroundColor: 'rgba(212, 178, 167, 1)',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
+  cookie: {
+    marginBottom: 24,
+  },
   doughDecor: {
     color: 'rgba(255, 253, 249, 1)',
     fontFamily: 'Poppins',
-    fontSize: 40,
-    fontWeight: '600',
-    marginBottom: 32,
+    fontSize: 42,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+    marginBottom: 8,
     textAlign: 'center',
   },
-  imageCircle: {
-    width: circleSize,
-    height: circleSize,
-    borderRadius: circleSize / 2,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-    overflow: 'hidden',
-  },
-  image1: {
-    width: '100%',
-    height: '100%',
-    borderRadius: circleSize / 2,
+  tagline: {
+    color: 'rgba(255, 253, 249, 0.85)',
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    fontWeight: '400',
+    textAlign: 'center',
   },
 });

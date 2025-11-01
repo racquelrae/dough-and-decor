@@ -155,7 +155,7 @@ export const theme = StyleSheet.create({
   buttonRow: {
     width: '100%',
     flexDirection: 'row',
-    marginTop: 20, // Increased from 8 to 20 for more space above buttons
+    marginTop: 20,
     marginBottom: 0,
   },
   inputText: {

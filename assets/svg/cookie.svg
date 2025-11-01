@@ -1,0 +1,57 @@
+<svg
+  width="300"
+  height="300"
+  viewBox="0 0 300 300"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <circle cx="150" cy="215" r="95" fill="#000000" opacity="0.12" />
+
+  <g>
+    <circle cx="150" cy="150" r="120" fill="#F4E4C1" stroke="#E8D4A8" stroke-width="3" />
+    <circle cx="112" cy="118" r="4" fill="#7A4C2E" opacity="0.45" />
+    <circle cx="190" cy="130" r="5" fill="#7A4C2E" opacity="0.45" />
+    <circle cx="175" cy="210" r="4.5" fill="#7A4C2E" opacity="0.45" />
+    <circle cx="125" cy="230" r="3.5" fill="#7A4C2E" opacity="0.45" />
+    <circle cx="215" cy="160" r="3.8" fill="#7A4C2E" opacity="0.45" />
+    <circle cx="95" cy="175" r="4.2" fill="#7A4C2E" opacity="0.45" />
+    <ellipse cx="90" cy="95" rx="18" ry="14" fill="#E8D4A8" opacity="0.35" />
+    <ellipse cx="210" cy="110" rx="20" ry="15" fill="#E8D4A8" opacity="0.3" />
+    <ellipse cx="110" cy="205" rx="14" ry="18" fill="#E8D4A8" opacity="0.35" />
+    <ellipse cx="210" cy="190" rx="18" ry="14" fill="#E8D4A8" opacity="0.4" />
+    <ellipse cx="150" cy="240" rx="16" ry="12" fill="#E8D4A8" opacity="0.3" />
+  </g>
+
+  <g>
+    <circle cx="150" cy="150" r="102" fill="#FFFDF7" stroke="#F5F0E8" stroke-width="2" opacity="0.95" />
+    <ellipse cx="130" cy="110" rx="45" ry="35" fill="#FFFFFF" opacity="0.3" />
+    <ellipse cx="115" cy="95" rx="25" ry="18" fill="#FFFFFF" opacity="0.4" />
+  </g>
+
+  <g>
+    <rect x="130" y="75" width="6" height="12" rx="1.5" transform="rotate(25 133 81)" fill="#FF69B4" />
+    <rect x="165" y="70" width="6" height="14" rx="1.5" transform="rotate(-15 168 77)" fill="#FF1493" />
+    <rect x="185" y="85" width="6" height="11" rx="1.5" transform="rotate(45 188 90.5)" fill="#FFB6C1" />
+    <rect x="145" y="92" width="6" height="13" rx="1.5" transform="rotate(-35 148 98.5)" fill="#FF69B4" />
+    <rect x="85" y="120" width="6" height="12" rx="1.5" transform="rotate(60 88 126)" fill="#FFB6C1" />
+    <rect x="105" y="135" width="6" height="14" rx="1.5" transform="rotate(-20 108 142)" fill="#FF1493" />
+    <rect x="90" y="155" width="6" height="11" rx="1.5" transform="rotate(15 93 160.5)" fill="#FF69B4" />
+    <rect x="140" y="125" width="6" height="13" rx="1.5" transform="rotate(-50 143 131.5)" fill="#FFB6C1" />
+    <rect x="158" y="140" width="6" height="12" rx="1.5" transform="rotate(30 161 146)" fill="#FF69B4" />
+    <rect x="145" y="155" width="6" height="14" rx="1.5" transform="rotate(-10 148 162)" fill="#FF1493" />
+    <rect x="170" y="160" width="6" height="11" rx="1.5" transform="rotate(55 173 165.5)" fill="#FFB6C1" />
+    <rect x="205" y="115" width="6" height="13" rx="1.5" transform="rotate(-40 208 121.5)" fill="#FF69B4" />
+    <rect x="215" y="140" width="6" height="12" rx="1.5" transform="rotate(20 218 146)" fill="#FFB6C1" />
+    <rect x="200" y="165" width="6" height="14" rx="1.5" transform="rotate(-25 203 172)" fill="#FF1493" />
+    <rect x="120" y="180" width="6" height="12" rx="1.5" transform="rotate(35 123 186)" fill="#FFB6C1" />
+    <rect x="155" y="190" width="6" height="13" rx="1.5" transform="rotate(-45 158 196.5)" fill="#FF69B4" />
+    <rect x="175" y="195" width="6" height="11" rx="1.5" transform="rotate(10 178 200.5)" fill="#FF1493" />
+    <rect x="135" y="200" width="6" height="14" rx="1.5" transform="rotate(50 138 207)" fill="#FFB6C1" />
+    <rect x="190" y="185" width="6" height="12" rx="1.5" transform="rotate(-30 193 191)" fill="#FF69B4" />
+    <rect x="115" y="110" width="6" height="11" rx="1.5" transform="rotate(70 118 115.5)" fill="#FF1493" />
+    <rect x="180" y="115" width="6" height="13" rx="1.5" transform="rotate(-60 183 121.5)" fill="#FFB6C1" />
+    <rect x="125" y="160" width="6" height="12" rx="1.5" transform="rotate(5 128 166)" fill="#FF69B4" />
+    <rect x="195" y="130" width="6" height="11" rx="1.5" transform="rotate(40 198 135.5)" fill="#FFB6C1" />
+    <rect x="160" y="210" width="6" height="13" rx="1.5" transform="rotate(-55 163 216.5)" fill="#FF1493" />
+  </g>
+</svg>

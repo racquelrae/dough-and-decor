@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
-import { useUser } from '../context/UserContext'; 
-import { Stack } from 'expo-router'; 
+import { useUser } from '../context/UserContext';
+import { Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 function niceName(raw?: string | null) {
   if (!raw) return '';
@@ -13,71 +14,55 @@ function niceName(raw?: string | null) {
     .join(' ');
 }
 
-  function CircleIcon({
-    children,
-    size = 28,
-    bg = "#BB9D93",
-    style,
-  }: {
-    children: React.ReactNode;
-    size?: number;
-    bg?: string;
-    style?: any;
-  }) {
-    return (
-      <View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: bg,
-            alignItems: "center",
-            justifyContent: "center",
-          },
-          style,
-        ]}
-      >
-        {children}
-      </View>
-    );
-  }
-
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user, userData } = useUser() as { user: any; userData: any };
 
   const userName = useMemo(() => {
-    // 1) Firestore users.username 
-    // 2) Auth displayName
-    // 3) fallback
     const fromFirestore = niceName(userData?.username);
     const fromAuth = user?.displayName ? niceName(user.displayName) : '';
     return fromFirestore || fromAuth || 'Baker';
   }, [user, userData]);
 
+  const tiles = [
+    { label: 'Recipes', style: styles.cardRecipes, route: 'Recipes' },
+    { label: 'Inventory', style: styles.cardInventory, route: 'Inventory' },
+    { label: 'Shopping List', style: styles.cardShoppingList, route: 'ShoppingList' },
+    { label: 'Inspiration Gallery', style: styles.cardInspiration, route: 'InspirationGallery' },
+    { label: 'Icing Color Blending Guide', style: styles.cardIcingGuide, route: 'IcingColorGuide' },
+    { label: 'Measurement Converter', style: styles.cardMeasurement, route: 'MeasurementConverter' },
+    { label: 'Timer', style: styles.cardTimer, route: 'TimerMenu' },
+    { label: 'Settings', style: styles.cardSettings, route: 'Settings' },
+  ] as const;
+
   return (
     <>
-        <Stack.Screen options = {{ headerShown: false}}/>
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.background}>
-          <View style={styles.greetingRow}>
-            <Text style={styles.greeting}>Hi, {userName}!</Text>
-            <Text style={styles.subGreeting}>What are you creating today?</Text>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <View style={styles.header}>
+              <Text style={styles.greeting}>Hi, {userName}!</Text>
+              <Text style={styles.subGreeting}>What are you creating today?</Text>
+            </View>
+
+            <View style={styles.tiles}>
+              {tiles.map((tile) => (
+                <HomeCard
+                  key={tile.label}
+                  label={tile.label}
+                  style={tile.style}
+                  onPress={() => navigation.navigate(tile.route as never)}
+                />
+              ))}
+            </View>
           </View>
-          <HomeCard label="Recipes" style={styles.cardRecipes} onPress={() => navigation.navigate('Recipes' as never)} />
-          <HomeCard label="Inventory" style={styles.cardInventory} onPress={() => navigation.navigate('Inventory' as never)} />
-          <HomeCard label="Shopping List" style={styles.cardShoppingList} onPress={() => navigation.navigate('ShoppingList' as never)} />
-          <HomeCard label="Inspiration Gallery" style={styles.cardInspiration} onPress={() => navigation.navigate('InspirationGallery' as never)} />
-          <HomeCard label="Icing Color Blending Guide" style={styles.cardIcingGuide} onPress={() => navigation.navigate('IcingColorGuide' as never)} />
-          <HomeCard label="Measurement Converter" style={styles.cardMeasurement} onPress={() => navigation.navigate('MeasurementConverter' as never)} />
-          <HomeCard label="Timer" style={styles.cardTimer} onPress={() => navigation.navigate('TimerMenu' as never)} />
-          <HomeCard label="Settings" style={styles.cardSettings} onPress={() => navigation.navigate('Settings' as never)} />
-        </View>
-      </ScrollView>
-    </View>
-    </> 
+        </ScrollView>
+      </LinearGradient>
+    </>
   );
 }
 
@@ -85,90 +70,110 @@ type HomeCardProps = { label: string; style?: any; onPress?: () => void };
 function HomeCard({ label, style, onPress }: HomeCardProps) {
   if (onPress) {
     return (
-      <TouchableOpacity style={[styles.homeCard, style]} onPress={onPress}>
-        <Text style={styles.homeCardLabel}>{label}</Text>
+      <TouchableOpacity style={[styles.tile, style]} onPress={onPress} activeOpacity={0.88}>
+        <Text style={styles.tileLabel}>{label}</Text>
+        <Svg width={20} height={20} viewBox="0 0 256 256" style={styles.tileIcon}>
+          <Path
+            d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"
+            stroke="#3E2823"
+            opacity={0.7}
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
       </TouchableOpacity>
     );
   }
   return (
-    <View style={[styles.homeCard, style]}>
-      <Text style={styles.homeCardLabel}>{label}</Text>
+    <View style={[styles.tile, style]}>
+      <Text style={styles.tileLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
     flex: 1,
-    backgroundColor: '#FFFDF9',
-    paddingTop: 50,
   },
-  background: {
-    flex: 1,
-    borderRadius: 40,
-    backgroundColor: '#FFFDF9',
-    paddingHorizontal: 0,
-    paddingTop: 0,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 48,
   },
-  headerStrip: {
-    paddingTop: 24,
-    paddingBottom: 8,
-    backgroundColor: '#FFFDF9',
-    alignItems: 'center',
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
+  card: {
+    backgroundColor: 'rgba(255, 253, 249, 0.92)',
+    borderRadius: 28,
+    marginTop: 40,
+    padding: 28,
+    shadowColor: '#46302B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  timeText: {
-    color: '#32201C',
-    fontFamily: 'League Spartan',
-    fontSize: 13,
-    fontWeight: '500',
+  header: {
+    alignItems: 'flex-start',
+    marginBottom: 32,
   },
-  greetingRow: {
-    marginTop: 36,
-    marginBottom: 24,
-    paddingHorizontal: 38,
+  badge: {
+    backgroundColor: 'rgba(236, 176, 152, 0.35)',
+    color: '#3E2823',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    marginBottom: 12,
   },
   greeting: {
     fontFamily: 'Poppins',
-    fontSize: 25,
+    fontSize: 30,
     color: '#1C0F0D',
-    fontWeight: '400',
-    marginBottom: 4,
+    fontWeight: '600',
+    marginBottom: 6,
   },
   subGreeting: {
     fontFamily: 'Poppins',
-    fontSize: 13,
-    color: '#1C0F0D',
+    fontSize: 16,
+    color: 'rgba(28, 15, 13, 0.75)',
     fontWeight: '400',
-    marginBottom: 12,
   },
-  homeCard: {
-    backgroundColor: '#EDC7BA',
-    marginHorizontal: 50,
-    marginVertical: 10,
-    borderRadius: 13,
-    shadowColor: 'rgba(0,0,0,0.25)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 4,
-    paddingHorizontal: 15,
-    paddingVertical: 18,
+  tiles: {
+    marginTop: 8,
+  },
+  tile: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 22,
+    paddingVertical: 20,
+    paddingHorizontal: 22,
+    marginBottom: 16,
+    shadowColor: '#3E2823',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
-  homeCardLabel: {
-    color: '#1C0F0D',
+  tileLabel: {
+    color: '#3E2823',
     fontFamily: 'Poppins',
-    fontSize: 15,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 12,
   },
-  cardRecipes: { marginTop: 6, },
-  cardInventory: {},
-  cardShoppingList: {},
-  cardInspiration: {},
-  cardIcingGuide: {},
-  cardMeasurement: {},
-  cardTimer: {},
-  cardSettings:{}
+  tileIcon: {
+    opacity: 0.65,
+  },
+  cardRecipes: { backgroundColor: '#deafa1ff' },
+  cardInventory: { backgroundColor: '#deafa1ff' },
+  cardShoppingList: { backgroundColor: '#deafa1ff' },
+  cardInspiration: { backgroundColor: '#deafa1ff' },
+  cardIcingGuide: { backgroundColor: '#deafa1ff' },
+  cardMeasurement: { backgroundColor: '#deafa1ff' },
+  cardTimer: { backgroundColor: '#deafa1ff' },
+  cardSettings: { backgroundColor: '#deafa1ff' },
 });

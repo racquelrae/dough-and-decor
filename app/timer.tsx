@@ -1,14 +1,22 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Path,
+  Rect,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAnchoredCountdown } from '../hooks/useAnchoredCountdown';
 import { addRecentTimer } from '../utils/recents';
 import { BackButton } from '../components/BackButton';
 import { Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Foreground behavior (optional: show even if app is open)
 (Notifications as any).setNotificationHandler({
@@ -41,41 +49,41 @@ async function ensureAndroidChannel() {
 
 function PauseButton({ isPaused, onPress }: { isPaused: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.pauseButton} onPress={onPress} activeOpacity={0.8}>
-      <Svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-        <Circle cx="30" cy="30" r="30" fill="#EDC7BA" fillOpacity="0.3" />
+    <TouchableOpacity style={styles.controlButton} onPress={onPress} activeOpacity={0.85}>
+      <Svg width="70" height="70" viewBox="0 0 70 70" fill="none">
+        <Circle cx="35" cy="35" r="35" fill="#EDC7BA" fillOpacity="0.32" />
       </Svg>
-      <View style={styles.pauseIconContainer}>
+      <View style={styles.controlIconContainer}>
         {isPaused ? (
-          <Ionicons name="play" size={32} color="#1C0F0D" style={{ opacity: 0.7 }} />
+          <Ionicons name="play" size={32} color="#3E2823" style={{ opacity: 0.8 }} />
         ) : (
           <Svg width="28" height="32" viewBox="0 0 28 32" fill="none">
-            <Rect x="3" y="4" width="7" height="24" rx="2" fill="#1C0F0D" fillOpacity="0.7" />
-            <Rect x="18" y="4" width="7" height="24" rx="2" fill="#1C0F0D" fillOpacity="0.7" />
+            <Rect x="3" y="4" width="7" height="24" rx="2" fill="#3E2823" fillOpacity="0.75" />
+            <Rect x="18" y="4" width="7" height="24" rx="2" fill="#3E2823" fillOpacity="0.75" />
           </Svg>
         )}
       </View>
-      <Text style={styles.pauseLabel}>{isPaused ? 'Start' : 'Pause'}</Text>
+      <Text style={styles.controlLabel}>{isPaused ? 'Start' : 'Pause'}</Text>
     </TouchableOpacity>
   );
 }
 
 function QuitButton({ isStopped, onPress }: { isStopped: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.quitButton} onPress={onPress} activeOpacity={0.8}>
-      <Svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-        <Circle cx="30" cy="30" r="30" fill="#EDC7BA" fillOpacity="0.3" />
+    <TouchableOpacity style={styles.controlButton} onPress={onPress} activeOpacity={0.85}>
+      <Svg width="70" height="70" viewBox="0 0 70 70" fill="none">
+        <Circle cx="35" cy="35" r="35" fill="#ECADB4" fillOpacity="0.32" />
       </Svg>
-      <View style={styles.quitIconContainer}>
+      <View style={styles.controlIconContainer}>
         {isStopped ? (
-          <Ionicons name="refresh" size={32} color="#1C0F0D" style={{ opacity: 0.7 }} />
+          <Ionicons name="refresh" size={32} color="#3E2823" style={{ opacity: 0.8 }} />
         ) : (
           <Svg width="28" height="32" viewBox="0 0 28 32" fill="none">
-            <Rect x="3" y="4" width="22" height="24" rx="4" fill="#1C0F0D" fillOpacity="0.7" />
+            <Rect x="3" y="4" width="22" height="24" rx="4" fill="#3E2823" fillOpacity="0.75" />
           </Svg>
         )}
       </View>
-      <Text style={styles.quitLabel}>{isStopped ? 'Restart' : 'Stop'}</Text>
+      <Text style={styles.controlLabel}>{isStopped ? 'Restart' : 'Stop'}</Text>
     </TouchableOpacity>
   );
 }
@@ -210,61 +218,229 @@ export default function TimerScreen() {
   }, [status]);
 
   // UI
-  const isRunning = status === 'running'
+  const isRunning = status === 'running';
   const isStopped = status === 'stopped';
+  const statusDotStyle =
+    status === 'running'
+      ? styles.statusDotRunning
+      : status === 'paused'
+      ? styles.statusDotPaused
+      : status === 'done'
+      ? styles.statusDotDone
+      : styles.statusDotIdle;
+  const statusLabel =
+    status === 'running'
+      ? 'Counting'
+      : status === 'paused'
+      ? 'Paused'
+      : status === 'done'
+      ? 'Finished'
+      : 'Ready';
 
   return (
     <>
-        <Stack.Screen options = {{ headerShown: false}}/>
-    <View style={styles.container}>
-      <BackButton />
-      <Text style={styles.header}>Timer</Text>
-      <View style={styles.timerCircleContainer} pointerEvents="box-none">
-        {/* Light ring */}
-        <Svg style={styles.ellipseLight} width="320" height="320" viewBox="0 0 320 320" fill="none" pointerEvents="none">
-          <Path d="M320 160C320 248.365 248.365 320 160 320C71.635 320 0 248.365 0 160C0 71.635 71.635 0 160 0C248.365 0 320 71.635 320 160ZM40 160C40 229.705 90.295 280 160 280C229.705 280 280 229.705 280 160C280 90.295 229.705 40 160 40C90.295 40 40 90.295 40 160Z" fill="#EDC7BA" fillOpacity="0.3"/>
-        </Svg>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+        <View style={styles.card}>
+          <BackButton />
+          <View style={styles.headerRow}>
+            <Text style={styles.header}>Timer</Text>
+            <Text style={styles.subheader}>Stay focused and let us watch the clock.</Text>
+          </View>
 
-        {/* Progress ring (remaining portion) */}
-        <Svg style={styles.ellipseDark} width="320" height="320" viewBox="0 0 320 320" fill="none" pointerEvents="none">
-          <Circle
-            cx="160"
-            cy="160"
-            r="140"
-            stroke="#BB9D93"
-            strokeWidth="35"
-            fill="none"
-            strokeDasharray={2 * Math.PI * 140}
-            strokeDashoffset={(1 - secondsLeft / initialSecondsRef.current) * 2 * Math.PI * 140}
-            strokeLinecap="round"
-            transform="rotate(-90 160 160)"
-          />
-        </Svg>
+          <View style={styles.timerCircleContainer} pointerEvents="box-none">
+            <Svg
+              style={styles.ellipseLight}
+              width="320"
+              height="320"
+              viewBox="0 0 320 320"
+              fill="none"
+              pointerEvents="none"
+            >
+              <Path
+                d="M320 160C320 248.365 248.365 320 160 320C71.635 320 0 248.365 0 160C0 71.635 71.635 0 160 0C248.365 0 320 71.635 320 160ZM40 160C40 229.705 90.295 280 160 280C229.705 280 280 229.705 280 160C280 90.295 229.705 40 160 40C90.295 40 40 90.295 40 160Z"
+                fill="#EDC7BA"
+                fillOpacity="0.2"
+              />
+            </Svg>
 
-        <Text style={styles.timerText}>{formatTime(secondsLeft)}</Text>
-      </View>
+            <Svg
+              style={styles.ellipseDark}
+              width="320"
+              height="320"
+              viewBox="0 0 320 320"
+              fill="none"
+              pointerEvents="none"
+            >
+              <Circle
+                cx="160"
+                cy="160"
+                r="140"
+                stroke="url(#timerGradient)"
+                strokeWidth="35"
+                fill="none"
+                strokeDasharray={2 * Math.PI * 140}
+                strokeDashoffset={(1 - secondsLeft / initialSecondsRef.current) * 2 * Math.PI * 140}
+                strokeLinecap="round"
+                transform="rotate(-90 160 160)"
+              />
+              <Defs>
+                <SvgLinearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0" stopColor="#BB9D93" stopOpacity="0.85" />
+                  <Stop offset="1" stopColor="#ECADB4" stopOpacity="0.95" />
+                </SvgLinearGradient>
+              </Defs>
+            </Svg>
 
-      <View style={styles.buttonRow}>
-        <PauseButton isPaused={!isRunning} onPress={handleStartPause} />
-        <QuitButton isStopped={isStopped} onPress={handleQuitPress} />
-      </View>
-    </View>
+            <Text style={styles.timerText}>{formatTime(secondsLeft)}</Text>
+            <View style={styles.statusPill}>
+              <View style={[styles.statusDot, statusDotStyle]} />
+              <Text style={styles.statusText}>{statusLabel}</Text>
+            </View>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <PauseButton isPaused={!isRunning} onPress={handleStartPause} />
+            <QuitButton isStopped={isStopped} onPress={handleQuitPress} />
+          </View>
+        </View>
+      </LinearGradient>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFDF9', padding: 24, position: 'relative' },
-  header: { marginTop: 90, marginLeft: 16, fontFamily: 'Poppins', fontSize: 24, fontWeight: '700', color: '#1C0F0D' },
-  timerCircleContainer: { marginTop: 32, marginBottom: 12, alignSelf: 'center', width: 320, height: 320, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  timerText: { position: 'absolute', top: '50%', left: '50%', width: 160, height: 40, marginLeft: -80, marginTop: -20, textAlign: 'center', color: '#070417', fontFamily: 'Poppins', fontSize: 32, fontWeight: '400', letterSpacing: 2, lineHeight: 40 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 48, marginHorizontal: 32 },
-  pauseButton: { alignItems: 'center', marginRight: 32 },
-  pauseIconContainer: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center', height: 60, zIndex: 1 },
-  pauseLabel: { fontFamily: 'Poppins', fontSize: 14, color: '#1C0F0D', textAlign: 'center', marginTop: 16 },
-  quitButton: { alignItems: 'center' },
-  quitIconContainer: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center', height: 60, zIndex: 1 },
-  quitLabel: { fontFamily: 'Poppins', fontSize: 14, color: '#1C0F0D', textAlign: 'center', marginTop: 16 },
+  gradient: {
+    flex: 1,
+  },
+  card: {
+    flex: 1,
+    margin: 20,
+    marginTop: 72,
+    backgroundColor: 'rgba(255, 253, 249, 0.92)',
+    borderRadius: 28,
+    padding: 28,
+    paddingTop: 62,
+    shadowColor: '#46302B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  headerRow: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(236, 176, 152, 0.35)',
+    color: '#3E2823',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  header: {
+    fontFamily: 'Poppins',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#3E2823',
+  },
+  subheader: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: 'rgba(62, 40, 35, 0.7)',
+    marginTop: 6,
+  },
+  timerCircleContainer: {
+    marginTop: 24,
+    marginBottom: 32,
+    alignSelf: 'center',
+    width: 320,
+    height: 320,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  timerText: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 200,
+    marginLeft: -100,
+    marginTop: -32,
+    textAlign: 'center',
+    color: '#3E2823',
+    fontFamily: 'Poppins',
+    fontSize: 36,
+    fontWeight: '600',
+    letterSpacing: 2,
+  },
+  statusPill: {
+    position: 'relative',
+    marginTop: 450,
+    bottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(236, 197, 210, 0.4)',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  statusDotRunning: {
+    backgroundColor: '#EC888D',
+  },
+  statusDotPaused: {
+    backgroundColor: '#D4B2A7',
+  },
+  statusDotDone: {
+    backgroundColor: '#7EA87C',
+  },
+  statusDotIdle: {
+    backgroundColor: 'rgba(62, 40, 35, 0.4)',
+  },
+  statusText: {
+    fontFamily: 'Poppins',
+    fontSize: 13,
+    color: '#3E2823',
+    marginTop: -8,
+    marginBottom: -8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    columnGap: 48,
+    marginTop: 72,
+  },
+  controlButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  controlIconContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 70,
+    zIndex: 1,
+  },
+  controlLabel: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: '#3E2823',
+    textAlign: 'center',
+    marginTop: 16,
+  },
   ellipseLight: { position: 'absolute', top: 0, left: 0, width: 320, height: 320 },
   ellipseDark: { position: 'absolute', top: 0, left: 0, width: 320, height: 320 },
 });

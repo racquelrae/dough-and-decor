@@ -15,5 +15,5 @@ export function BackButton({ style }: { style?: any }) {
 }
 
 const styles = StyleSheet.create({
-    backButton: { position: 'absolute', top: 76, left: 16, backgroundColor: 'rgba(237, 199, 186, 0.3)', borderRadius: 32, padding: 8, zIndex: 2 },
+    backButton: { position: 'absolute', top: 76, left: 16, backgroundColor: 'rgba(237, 199, 186, 0.3)', borderRadius: 32, padding: 8, zIndex: 2, marginTop: -50 },
 });

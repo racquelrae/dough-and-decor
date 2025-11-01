@@ -8,6 +8,7 @@ import {
   Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from 'react-native';
 import { Circle, Path, Svg } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUser } from '../context/UserContext';
 import { db } from '../firebase/config';
 import { theme } from '../styles/theme';
@@ -280,19 +281,35 @@ export default function CompleteProfileScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={theme.screenContainer}>
-          < BackButton />
-          <View style={theme.headerContainer}>
-            <Text style={theme.heading}>{mode === "edit" ? "Edit Your Profile" : "Complete Your Profile"}</Text>
-          </View>
+    <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            <View style={styles.backRow}>
+              <BackButton />
+            </View>
+            <View style={styles.header}>
+              <Text style={[theme.heading, styles.title]}>
+                {mode === "edit" ? "Edit Your Profile" : "Complete Your Profile"}
+              </Text>
+              <Text style={styles.subtitle}>
+                {mode === "edit"
+                  ? "Refresh your baking persona and keep everything current."
+                  : "Tell us a bit about you so we can personalize your baking journey."}
+              </Text>
+            </View>
 
-          <View style={theme.formContainer}>
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrapper}>
-                <Svg style={styles.ellipse48} width="102" height="101" viewBox="0 0 102 101" fill="none">
-                  <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA" />
+                <Svg style={styles.ellipse} width="102" height="101" viewBox="0 0 102 101" fill="none">
+                  <Circle cx="50.6863" cy="50.4073" r="50.4073" fill="#EDC7BA" opacity={0.7}/>
                 </Svg>
 
                 {loading ? (
@@ -301,136 +318,167 @@ export default function CompleteProfileScreen() {
                   <Image source={{ uri: image }} style={styles.profileImage} />
                 ) : (
                   <View style={styles.personIconWrapper}>
-                    <Svg width="42" height="60" viewBox="0 0 42 60" fill="none" opacity={0.4}>
-                      <Path d="M21.1794 20.8069C26.3247 20.8069 30.4958 16.6359 30.4958 11.4906C30.4958 6.34533 26.3247 2.17426 21.1794 2.17426C16.0341 2.17426 11.8631 6.34533 11.8631 11.4906C11.8631 16.6359 16.0341 20.8069 21.1794 20.8069Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
-                      <Path d="M38.3297 48.0189C33.8578 58.064 21.1215 57.236 21.1215 57.236C21.1215 57.236 8.37674 58.0309 3.91318 48.0189C3.04931 46.0929 2.60266 44.0058 2.60266 41.8949C2.60266 39.784 3.04931 37.6972 3.91318 35.7712C8.37674 25.7261 21.1215 26.5541 21.1215 26.5541C21.1215 26.5541 33.8578 25.7592 38.3297 35.7712C39.1935 37.6972 39.6402 39.784 39.6402 41.8949C39.6402 44.0058 39.1935 46.0929 38.3297 48.0189Z" stroke="#1C0F0D" strokeWidth="4.1406" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Svg width="50" height="64" viewBox="0 0 256 256" fill="#FFFFFF" opacity={0.8}>
+                      <Path d="M224,40V76a8,8,0,0,1-16,0V48H180a8,8,0,0,1,0-16h36A8,8,0,0,1,224,40Zm-8,132a8,8,0,0,0-8,8v28H180a8,8,0,0,0,0,16h36a8,8,0,0,0,8-8V180A8,8,0,0,0,216,172ZM76,208H48V180a8,8,0,0,0-16,0v36a8,8,0,0,0,8,8H76a8,8,0,0,0,0-16ZM40,84a8,8,0,0,0,8-8V48H76a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8V76A8,8,0,0,0,40,84Zm136,92a8,8,0,0,1-6.41-3.19,52,52,0,0,0-83.2,0,8,8,0,1,1-12.8-9.62A67.94,67.94,0,0,1,101,141.51a40,40,0,1,1,53.94,0,67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,176,176Zm-48-40a24,24,0,1,0-24-24A24,24,0,0,0,128,136Z"></Path>
                     </Svg>
                   </View>
                 )}
               </View>
 
-              <TouchableOpacity style={styles.uploadBtn} activeOpacity={0.7} onPress={showImagePickerOptions}>
-                <Text style={theme.link}>{image || existingPhotoUrl ? 'Change Profile Picture' : 'Upload Profile Picture'}</Text>
+              <TouchableOpacity
+                style={styles.uploadBtn}
+                activeOpacity={0.7}
+                onPress={showImagePickerOptions}
+              >
+                <Text style={styles.uploadText}>
+                  {image || existingPhotoUrl ? 'Change Profile Picture' : 'Upload Profile Picture'}
+                </Text>
               </TouchableOpacity>
+
+              {(image || existingPhotoUrl) && (
+                <TouchableOpacity
+                  style={styles.removePhotoWrapper}
+                  activeOpacity={0.7}
+                  onPress={handleRemovePhoto}
+                  disabled={loading}
+                >
+                  <Text style={styles.removePhoto}>Remove Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-            {(image || existingPhotoUrl) && (
-              <TouchableOpacity
-                style={{ marginTop: 6 }}
-                activeOpacity={0.7}
-                onPress={handleRemovePhoto}
-                disabled={loading}
-              >
-                <Text style={[theme.link, { color: '#c06' }]}>Remove Photo</Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={theme.formContainer}>
+            <View style={styles.section}>
               <Text style={theme.label}>Username</Text>
               <TextInput
-                style={theme.textInput}
+                style={[theme.textInput, styles.textInput]}
                 placeholder="username"
-                placeholderTextColor="#1C0F0D55"
+                placeholderTextColor="#1C0F0D80"
                 value={username}
                 autoCapitalize="none"
                 onChangeText={(t) => { setUsername(t); setUsernameError(''); }}
               />
-              {!!usernameError && <Text style={{ color: '#D7263D', marginBottom: 8, marginLeft: 4, fontSize: 14 }}>{usernameError}</Text>}
+              {!!usernameError && <Text style={styles.errorText}>{usernameError}</Text>}
 
               <Text style={theme.label}>What best describes you?</Text>
 
               {Platform.OS === 'ios' ? (
-                <TouchableOpacity style={[theme.textInput, { justifyContent: 'center' }]} onPress={handleUserTypePress} activeOpacity={0.7}>
-                  <Text style={{ color: userType ? '#1C0F0D' : '#1C0F0D55' }}>
+                <TouchableOpacity
+                  style={[theme.textInput, styles.textInput, styles.selectInput]}
+                  onPress={handleUserTypePress}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.selectValue, { color: userType ? '#1C0F0D' : '#1C0F0D80' }]}>
                     {userType ? (userType === 'Other' ? 'Other (type below)' : userType) : 'Select an option...'}
                   </Text>
                 </TouchableOpacity>
               ) : (
-                <Picker selectedValue={userType} onValueChange={(v) => setUserType(v)} style={{ minHeight: 44, width: '100%', color: '#1C0F0D' }} dropdownIconColor="#D4B2A7">
-                  <Picker.Item label="Select an option..." value="" />
-                  <Picker.Item label="Hobbyist" value="Hobbyist" />
-                  <Picker.Item label="Small Business Owner" value="Small Business Owner" />
-                  <Picker.Item label="Professional Baker" value="Professional Baker" />
-                  <Picker.Item label="Student" value="Student" />
-                  <Picker.Item label="Other (type below)" value="Other" />
-                </Picker>
+                <View style={[theme.textInput, styles.textInput, styles.pickerWrapper]}>
+                  <Picker
+                    selectedValue={userType}
+                    onValueChange={(v) => setUserType(v)}
+                    style={styles.picker}
+                    dropdownIconColor="#D4B2A7"
+                  >
+                    <Picker.Item label="Select an option..." value="" color="#1C0F0D55" />
+                    <Picker.Item label="Hobbyist" value="Hobbyist" />
+                    <Picker.Item label="Small Business Owner" value="Small Business Owner" />
+                    <Picker.Item label="Professional Baker" value="Professional Baker" />
+                    <Picker.Item label="Student" value="Student" />
+                    <Picker.Item label="Other (type below)" value="Other" />
+                  </Picker>
+                </View>
               )}
 
               {userType === 'Other' && (
                 <TextInput
-                  style={theme.textInput}
+                  style={[theme.textInput, styles.textInput]}
                   placeholder="Type your description..."
-                  placeholderTextColor="#1C0F0D55"
+                  placeholderTextColor="#1C0F0D80"
                   value={customType}
                   onChangeText={setCustomType}
                 />
               )}
             </View>
 
-            <View style={[theme.buttonRow, { marginTop: 12 }]}>
+            <View style={styles.actions}>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#8a6e63' }]}
+                style={[theme.button, styles.utilityButton]}
                 onPress={() => setShowChangeEmail(true)}
+                disabled={loading}
+                activeOpacity={0.85}
               >
                 <Text style={theme.buttonText}>Change Email</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={[theme.buttonRow, { marginTop: 8 }]}>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, marginHorizontal: 0, backgroundColor: '#8a6e63' }]}
+                style={[theme.button, styles.utilityButton]}
                 onPress={() => setShowChangePassword(true)}
+                disabled={loading}
+                activeOpacity={0.85}
               >
                 <Text style={theme.buttonText}>Change Password</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={theme.buttonRow}>
-              <TouchableOpacity style={[theme.button, { flex: 1, marginHorizontal: 0 }]} onPress={handleContinue} disabled={loading}>
-                <Text style={theme.buttonText}>  
-                  {loading ? (mode === "edit" ? "Saving..." : "Saving...") : (mode === "edit" ? "Save Changes" : "Continue")}
+              <TouchableOpacity
+                style={[theme.button, styles.primaryButton]}
+                onPress={handleContinue}
+                disabled={loading}
+                activeOpacity={0.9}
+              >
+                <Text style={theme.buttonText}>
+                  {loading
+                    ? mode === "edit"
+                      ? "Saving..."
+                      : "Saving..."
+                    : mode === "edit"
+                    ? "Save Changes"
+                    : "Continue"}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      {/* Change Email Modal */}
       {showChangeEmail && (
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={[theme.heading, { fontSize: 18, marginBottom: 8 }]}>Change Email</Text>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Change Email</Text>
             <TextInput
-              style={theme.textInput}
+              style={[theme.textInput, styles.textInput]}
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="New email"
-              placeholderTextColor="#1C0F0D55"
+              placeholderTextColor="#1C0F0D80"
               value={newEmail}
               onChangeText={setNewEmail}
             />
             <TextInput
-              style={theme.textInput}
+              style={[theme.textInput, styles.textInput]}
               secureTextEntry
               placeholder="Current password"
-              placeholderTextColor="#1C0F0D55"
+              placeholderTextColor="#1C0F0D80"
               value={currentPasswordForEmail}
               onChangeText={setCurrentPasswordForEmail}
             />
 
-            <View style={theme.buttonRow}>
+            <View style={styles.modalButtonRow}>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, backgroundColor: '#eee' }]}
+                style={[theme.button, styles.modalButton, styles.modalCancelButton]}
                 onPress={() => setShowChangeEmail(false)}
                 disabled={changingEmail}
+                activeOpacity={0.85}
               >
-                <Text style={[theme.buttonText, { color: '#444' }]}>Cancel</Text>
+                <Text style={[theme.buttonText, styles.modalCancelText]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, backgroundColor: '#8a6e63' }]}
+                style={[
+                  theme.button,
+                  styles.modalButton,
+                  styles.modalConfirmButton,
+                  styles.modalButtonSpacing,
+                ]}
                 onPress={handleChangeEmail}
                 disabled={changingEmail}
+                activeOpacity={0.9}
               >
                 <Text style={theme.buttonText}>{changingEmail ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
@@ -439,40 +487,46 @@ export default function CompleteProfileScreen() {
         </View>
       )}
 
-      {/* Change Password Modal */}
       {showChangePassword && (
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={[theme.heading, { fontSize: 18, marginBottom: 8 }]}>Change Password</Text>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Change Password</Text>
             <TextInput
-              style={theme.textInput}
+              style={[theme.textInput, styles.textInput]}
               secureTextEntry
               placeholder="Current password"
-              placeholderTextColor="#1C0F0D55"
+              placeholderTextColor="#1C0F0D80"
               value={currentPasswordForPassword}
               onChangeText={setCurrentPasswordForPassword}
             />
             <TextInput
-              style={theme.textInput}
+              style={[theme.textInput, styles.textInput]}
               secureTextEntry
               placeholder="New password"
-              placeholderTextColor="#1C0F0D55"
+              placeholderTextColor="#1C0F0D80"
               value={newPassword}
               onChangeText={setNewPassword}
             />
 
-            <View style={theme.buttonRow}>
+            <View style={styles.modalButtonRow}>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, backgroundColor: '#eee' }]}
+                style={[theme.button, styles.modalButton, styles.modalCancelButton]}
                 onPress={() => setShowChangePassword(false)}
                 disabled={changingPassword}
+                activeOpacity={0.85}
               >
-                <Text style={[theme.buttonText, { color: '#444' }]}>Cancel</Text>
+                <Text style={[theme.buttonText, styles.modalCancelText]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[theme.button, { flex: 1, backgroundColor: '#8a6e63' }]}
+                style={[
+                  theme.button,
+                  styles.modalButton,
+                  styles.modalConfirmButton,
+                  styles.modalButtonSpacing,
+                ]}
                 onPress={handleChangePassword}
                 disabled={changingPassword}
+                activeOpacity={0.9}
               >
                 <Text style={theme.buttonText}>{changingPassword ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
@@ -480,21 +534,229 @@ export default function CompleteProfileScreen() {
           </View>
         </View>
       )}
-        <ToastHost />
-    </KeyboardAvoidingView>
+
+      <ToastHost />
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  avatarSection: { alignItems: 'center', marginBottom: 16 },
-  avatarWrapper: { width: 102, height: 101, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  ellipse48: { position: 'absolute', top: 0, left: 0, width: 102, height: 101 },
-  profileImage: { width: 70, height: 70, borderRadius: 35, position: 'absolute', top: 16, left: 16, resizeMode: 'cover' },
-  personIconWrapper: { width: 42, height: 60, alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 20, left: 30 },
-  headerSection: { width: '100%', alignItems: 'flex-start', marginBottom: 16 },
-  uploadBtn: { marginTop: 8, marginBottom: 8 },
-  modalOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }, 
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
-  modalItem: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  modalItemText: { fontSize: 18, color: '#1C0F0D' },
+  gradient: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+  },
+  card: {
+    backgroundColor: 'rgba(255, 253, 249, 0.92)',
+    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingBottom: 28,
+    paddingTop: 72,
+    alignSelf: 'stretch',
+    shadowColor: '#46302B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  backRow: {
+    position: 'absolute',
+    left: 10,
+    zIndex: 2,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#3E2823',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: 'rgba(62, 40, 35, 0.7)',
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarWrapper: {
+    width: 102,
+    height: 101,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  ellipse: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 102,
+    height: 101,
+  },
+  profileImage: {
+    width: 87,
+    height: 87,
+    borderRadius: 50,
+    position: 'absolute',
+    top: 7,
+    left: 7,
+    resizeMode: 'cover',
+  },
+  personIconWrapper: {
+    width: 42,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 20,
+    left: 30,
+  },
+  uploadBtn: {
+    marginTop: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    shadowColor: '#3E2823',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  uploadText: {
+    color: '#3E2823',
+    fontFamily: 'Poppins',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  removePhotoWrapper: {
+    marginTop: 12,
+  },
+  removePhoto: {
+    color: '#C26A77',
+    fontFamily: 'Poppins',
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  section: {
+    marginBottom: 24,
+  },
+  textInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(62, 40, 35, 0.1)',
+    shadowColor: '#3E2823',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  errorText: {
+    color: '#D7263D',
+    marginBottom: 4,
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  selectInput: {
+    justifyContent: 'center',
+  },
+  selectValue: {
+    fontFamily: 'Poppins',
+    fontSize: 16,
+  },
+  pickerWrapper: {
+    paddingHorizontal: 0,
+  },
+  picker: {
+    width: '100%',
+    color: '#1C0F0D',
+  },
+  actions: {
+    marginTop: 8,
+  },
+  utilityButton: {
+    backgroundColor: '#ccb0a7ff',
+    shadowColor: '#C79A8C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 10,
+    marginTop: 12,
+  },
+  primaryButton: {
+    shadowColor: '#2E1C18',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 12,
+    marginTop: 20,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(28, 15, 13, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: 'rgba(255, 253, 249, 0.98)',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#46302B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins',
+    fontWeight: '600',
+    color: '#3E2823',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    shadowColor: '#2E1C18',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  modalButtonSpacing: {
+    marginLeft: 12,
+  },
+  modalCancelButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  modalCancelText: {
+    color: '#3E2823',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#da9078ff',
+  },
 });

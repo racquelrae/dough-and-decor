@@ -3,29 +3,49 @@ import { Stack } from "expo-router";
 import { getAuth } from "firebase/auth";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Animated,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
 import * as api from "../firebase/shoppingList";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
-
+/** ---------- Types ---------- */
 type Item = { id: string; title: string; done: boolean; quantity: number; unit?: string };
 
-// Common kitchen units + blank
-const UNIT_OPTIONS = ["", "pcs", "dozen", "cup", "cups", "tsp", "tbsp", "oz", "lb", "g", "kg", "ml", "L", "pkg", "gal"] as const;
+const UNIT_OPTIONS = [
+  "",
+  "pcs",
+  "dozen",
+  "cup",
+  "cups",
+  "tsp",
+  "tbsp",
+  "oz",
+  "lb",
+  "g",
+  "kg",
+  "ml",
+  "L",
+  "pkg",
+  "gal",
+] as const;
+
 type Unit = (typeof UNIT_OPTIONS)[number];
 
+/** ---------- Bottom Sheet ---------- */
 function BottomSheet({
   visible,
   onClose,
@@ -38,84 +58,100 @@ function BottomSheet({
   avoidKeyboard?: boolean;
 }) {
   const [mounted, setMounted] = useState(visible);
-  const opacity = useRef(new Animated.Value(0)).current;      // backdrop
-  const translateY = useRef(new Animated.Value(24)).current;  // sheet lift
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(48)).current;
 
   useEffect(() => {
     if (visible) {
       setMounted(true);
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
         Animated.spring(translateY, {
           toValue: 0,
-          damping: 20,
-          stiffness: 240,
-          mass: 0.6,
+          damping: 22,
+          stiffness: 260,
+          mass: 0.7,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 0, duration: 140, useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 24, duration: 140, useNativeDriver: true }),
-      ]).start(({ finished }) => finished && setMounted(false));
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 48,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) setMounted(false);
+      });
     }
   }, [visible, opacity, translateY]);
 
   if (!mounted) return null;
 
-  const Body = (
+  const sheetBody = (
     <View style={{ flex: 1, justifyContent: "flex-end" }}>
-      {/* Backdrop */}
-      <Pressable
-        onPress={onClose}
-        style={{ ...StyleSheet.absoluteFillObject }}
-      >
+      <Pressable onPress={onClose} style={StyleSheet.absoluteFill}>
         <Animated.View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.22)",
-            opacity,
-          }}
-        />
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              opacity,
+              backgroundColor: "rgba(28, 15, 13, 0.2)",
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={["rgba(249,232,222,0.0)", "rgba(249,232,222,0.35)", "rgba(217,182,171,0.55)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+          />
+        </Animated.View>
       </Pressable>
 
-      {/* Sheet */}
-      <Animated.View
-        style={{
-          transform: [{ translateY }],
-        }}
-      >
-        {children}
-      </Animated.View>
+      <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>
     </View>
   );
 
   return (
     <Modal
-        transparent
-        visible
-        animationType="none"
-        statusBarTranslucent
-        presentationStyle="overFullScreen"
-        onRequestClose={onClose}
+      transparent
+      visible
+      animationType="none"
+      statusBarTranslucent
+      presentationStyle="overFullScreen"
+      onRequestClose={onClose}
     >
-        {avoidKeyboard ? (
+      {avoidKeyboard ? (
         <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            {Body}
+          {sheetBody}
         </KeyboardAvoidingView>
-        ) : (
-        Body
-        )}
+      ) : (
+        sheetBody
+      )}
     </Modal>
-    );
+  );
 }
 
+/** ---------- Data Hook ---------- */
 export function useShoppingList(uid?: string) {
   const [items, setItems] = useState<api.ItemDoc[]>([]);
+
   useEffect(() => {
     if (!uid) return;
     return api.subscribeItems(uid, setItems);
@@ -144,6 +180,7 @@ export function useShoppingList(uid?: string) {
   return { items, add, toggle, setQty, remove };
 }
 
+/** ---------- Screen ---------- */
 export default function ShoppingList() {
   const uid = getAuth().currentUser?.uid;
   const { items, add, toggle, setQty, remove } = useShoppingList(uid);
@@ -155,15 +192,13 @@ export default function ShoppingList() {
 
   const Palette = useMemo(
     () => ({
-      bg: "#FFFDF9",
-      card: "rgba(237,233,227,0.3)",
-      cardChecked: "rgba(237,199,186,0.30)",
+      rowBg: "rgba(237, 233, 227, 0.3)",
+      rowBgChecked: "rgba(237, 199, 186, 0.80)",
       border: "#EAECEF",
       borderChecked: "#D4B2A7",
       text: "#344054",
-      textMuted: "#BB9D93",
-      pill: "#D4B2A7",
-      white: "#FFFFFF",
+      muted: "#BB9D93",
+      accent: "#D4B2A7",
     }),
     []
   );
@@ -171,423 +206,657 @@ export default function ShoppingList() {
   const confirmRemove = (it: api.ItemDoc) =>
     Alert.alert("Delete item", `Remove “${it.title}”?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        remove(it.id);
-      }},
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          remove(it.id);
+        },
+      },
     ]);
 
-  const renderRightActions = (it: api.ItemDoc, _dragX: any, _progress: any, close?: () => void) => (
+  const renderRightActions = (
+    it: api.ItemDoc,
+    _dragX: Animated.AnimatedInterpolation<string | number>,
+    _progress: Animated.AnimatedInterpolation<string | number>,
+    close?: () => void
+  ) => (
     <View style={styles.rightActionWrap}>
-        <Pressable
+      <Pressable
         onPress={() => {
-            Haptics.selectionAsync();
-            close?.(); // neatly slide it back
-            confirmRemove(it);
+          Haptics.selectionAsync();
+          close?.();
+          confirmRemove(it);
         }}
         style={styles.rightActionButton}
-        >
+      >
         <Text style={styles.rightActionText}>Delete</Text>
-        </Pressable>
+      </Pressable>
     </View>
-    );
-
+  );
 
   const renderItem = ({ item }: { item: api.ItemDoc }) => {
     let swipeRef: Swipeable | null = null;
     const checked = item.done;
 
     return (
-    <Swipeable
-      ref={(r) => {swipeRef = r;}}
-      friction={2}
-      rightThreshold={40}
-      renderRightActions={(progress, dragX) =>
-        renderRightActions(item, dragX, progress, () => swipeRef?.close())
-      }
-    >
-      <View
-        style={[
-          styles.row,
-          {
-            backgroundColor: checked ? Palette.cardChecked : Palette.card,
-            borderColor: checked ? Palette.borderChecked : Palette.border,
-          },
-        ]}
+      <Swipeable
+        ref={(r) => {
+          swipeRef = r;
+        }}
+        friction={2}
+        rightThreshold={40}
+        renderRightActions={(progress, dragX) =>
+          renderRightActions(item, dragX, progress, () => swipeRef?.close())
+        }
       >
-        <Pressable onPress={() => toggle(item)} onLongPress={() => confirmRemove(item)} style={styles.rowLeft}>
-          <View style={[styles.checkbox, { borderColor: checked ? Palette.textMuted : Palette.border }]}>
-            {checked ? <View style={styles.checkboxDot} /> : null}
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text
+        <View
+          style={[
+            styles.row,
+            {
+              backgroundColor: checked ? Palette.rowBgChecked : Palette.rowBg,
+              borderColor: checked ? Palette.borderChecked : Palette.border,
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => toggle(item)}
+            onLongPress={() => confirmRemove(item)}
+            style={styles.rowLeft}
+          >
+            <View
               style={[
-                styles.rowText,
+                styles.checkbox,
                 {
-                  color: checked ? Palette.textMuted : Palette.text,
-                  textDecorationLine: checked ? "line-through" : "none",
+                  borderColor: checked ? Palette.borderChecked : Palette.border,
                 },
               ]}
-              numberOfLines={1}
             >
-              {item.title}
-            </Text>
-            <Text style={styles.rowSub}>
-              {item.quantity} {item.unit ? item.unit : ""}
-            </Text>
+              {checked ? <View style={styles.checkboxDot} /> : null}
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.rowText,
+                  {
+                    color: checked ? Palette.muted : Palette.text,
+                    textDecorationLine: checked ? "line-through" : "none",
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {item.title}
+              </Text>
+              <Text style={[styles.rowSub, checked && { color: "rgba(62, 40, 35, 0.3)" }]}>
+                {item.quantity} {item.unit ? item.unit : ""}
+              </Text>
+            </View>
+          </Pressable>
+
+          <View
+            style={[
+              styles.stepperWrap,
+              checked && { backgroundColor: "rgba(236, 197, 210, 0.35)" },
+            ]}
+          >
+            <Pressable
+              onPress={() => setQty(item, Math.max(0, item.quantity - 1))}
+              style={[styles.stepBtn, item.quantity <= 0 && { opacity: 0.4 }]}
+            >
+              <Text style={styles.stepBtnText}>–</Text>
+            </Pressable>
+            <Text style={styles.qtyText}>{item.quantity}</Text>
+            <Pressable
+              onPress={() => setQty(item, item.quantity + 1)}
+              style={styles.stepBtn}
+            >
+              <Text style={styles.stepBtnText}>+</Text>
+            </Pressable>
           </View>
-        </Pressable>
-
-        <View style={styles.stepperWrap}>
-          <Pressable onPress={() => setQty(item, Math.max(0, item.quantity - 1))} style={[styles.stepBtn, { borderColor: Palette.border }]}>
-            <Text style={styles.stepBtnText}>–</Text>
-          </Pressable>
-          <Text style={styles.qtyText}>{item.quantity}</Text>
-          <Pressable onPress={() => setQty(item, item.quantity + 1)} style={[styles.stepBtn, { borderColor: Palette.border }]}>
-            <Text style={styles.stepBtnText}>+</Text>
-          </Pressable>
         </View>
-      </View>
-    </Swipeable>
-  );
-};
+      </Swipeable>
+    );
+  };
 
+  const gradientStops = useMemo(() => ["#F9E8DE", "#D9B6AB"], []);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={[styles.screen, { backgroundColor: Palette.bg }]}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <BackButton />
-        <View style={styles.headerWrap}>
-          <Text style={styles.title}>Grocery Shopping List</Text>
-        </View>
-
-        <ScrollView
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-            keyboardShouldPersistTaps="handled"
-            >
-            {items.length === 0 ? (
-                <View style={styles.emptyWrap}>
-                <View style={styles.emptyIcon}>
-                    <Text style={styles.emptyIconText}>🛒</Text>
+        <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            style={styles.safeAreaInner}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <BackButton />
+            <View style={styles.card}>
+              <View style={styles.headerRow}>
+                <View style={styles.headerText}>
+                  <Text style={styles.title}>Shopping List</Text>
+                  <Text style={styles.subtitle}>
+                    Keep track of everything you need for the next bake. Check off finished items, adjust quantities, and stay organized.
+                  </Text>
                 </View>
-                <Text style={styles.emptyTitle}>No items yet</Text>
-                <Text style={styles.emptyText}>
-                    Add what you need for your next bake.
-                </Text>
-
                 <Pressable
-                    onPress={() => setShowAddSheet(true)}
-                    style={[styles.addBtn, { backgroundColor: Palette.pill, alignSelf: "stretch" }]}
+                  onPress={() => setShowAddSheet(true)}
+                  style={({ pressed }) => [styles.addFloating, pressed && styles.addFloatingPressed]}
+                  hitSlop={10}
                 >
-                    <Text style={styles.addBtnText}>Add your first item</Text>
+                  <Ionicons name="add" size={22} color="#3E2823" />
                 </Pressable>
-                </View>
-            ) : (
-                <>
-                {items.map((it) => (
-                    <View key={it.id} style={{ marginBottom: 12 }}>
-                    {renderItem({ item: it })}
+              </View>
+
+              <ScrollView
+                contentContainerStyle={styles.listContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {items.length === 0 ? (
+                  <View style={styles.emptyWrap}>
+                    <View style={styles.emptyIcon}>
+                      <Text style={styles.emptyIconText}>🛒</Text>
                     </View>
-                ))}
-
-                {/* Add launcher (for non-empty lists) */}
-                <View style={[styles.addBarWrap, { paddingHorizontal: 16 }]}>
-                    <Pressable
-                    style={[styles.addBtn, { backgroundColor: Palette.pill }]}
-                    onPress={() => setShowAddSheet(true)}
-                    >
-                    <Text style={styles.addBtnText}>Add item</Text>
+                    <Text style={styles.emptyTitle}>No items yet</Text>
+                    <Text style={styles.emptyText}>
+                      Add what you need for your next bake.
+                    </Text>
+                    <Pressable onPress={() => setShowAddSheet(true)} style={styles.emptyButton}>
+                      <Text style={styles.emptyButtonText}>Add your first item</Text>
                     </Pressable>
-                </View>
-
-                <View style={{ height: 24 }} />
-                </>
-            )}
-            </ScrollView>
-
-
-        {/* Add Item Sheet */}
-        <BottomSheet visible={showAddSheet} onClose={() => {
-            setShowAddSheet(false);
-            setUnitMode(false); // reset if they dismiss
-            }}>
-            {unitMode ? (
-                // ===== Unit list view =====
-                <View style={styles.unitSheet}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={styles.sheetTitle}>Choose unit</Text>
-                    <Pressable onPress={() => setUnitMode(false)}>
-                    <Text style={{ fontSize: 16 }}>✕</Text>
-                    </Pressable>
-                </View>
-
-                <ScrollView style={{ marginTop: 8, maxHeight: 320 }}>
-                    {UNIT_OPTIONS.map((u) => (
-                    <Pressable
-                        key={u || "none"}
-                        onPress={() => {
-                        setNewUnit(u as Unit);
-                        setUnitMode(false);
-                        }}
-                        style={styles.unitMenuItem}
-                    >
-                        <Text style={styles.unitMenuText}>{u || "(none)"}</Text>
-                    </Pressable>
+                  </View>
+                ) : (
+                  <>
+                    {items.map((it) => (
+                      <View key={it.id} style={styles.rowContainer}>
+                        {renderItem({ item: it })}
+                      </View>
                     ))}
-                </ScrollView>
-                </View>
-            ) : (
-                // ===== Add item form =====
-                <View style={styles.sheet}>
-                <Text style={styles.sheetTitle}>Add item</Text>
-
-                {/* Name */}
-                <View style={[styles.inputWrap, { borderColor: Palette.border, marginTop: 12 }]}>
-                    <TextInput
-                    placeholder="Item name"
-                    placeholderTextColor="#98A2B3"
-                    value={newItem}
-                    onChangeText={setNewItem}
-                    returnKeyType="next"
-                    style={styles.input}
-                    />
-                </View>
-
-                {/* Qty + Unit */}
-                <View style={[styles.qtyAddRow, { marginTop: 12 }]}>
-                    <View style={[styles.qtyInputWrap, { borderColor: Palette.border }]}>
-                    <Text style={styles.qtyLabel}>Qty</Text>
-                    <TextInput
-                        keyboardType="number-pad"
-                        value={newQty}
-                        onChangeText={(t) => setNewQty(t.replace(/[^0-9]/g, ""))}
-                        style={styles.qtyInput}
-                        placeholder="1"
-                        placeholderTextColor="#98A2B3"
-                        returnKeyType="done"
-                    />
+                    <View style={styles.addBarWrap}>
+                      <Pressable style={styles.addFullWidth} onPress={() => setShowAddSheet(true)}>
+                        <Text style={styles.addBtnText}>Add item</Text>
+                      </Pressable>
                     </View>
+                  </>
+                )}
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+        </LinearGradient>
+      </GestureHandlerRootView>
 
-                    <Pressable
-                    onPress={() => setUnitMode(true)}
-                    style={[styles.unitBtn, { borderColor: Palette.border, backgroundColor: "#FFFFFF" }]}
-                    >
-                    <Text style={styles.unitBtnText}>{newUnit || "unit"}</Text>
-                    <Text style={styles.chev}>▾</Text>
-                    </Pressable>
-                </View>
-
-                {/* Actions */}
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
-                    <Pressable style={[styles.cancelBtn]} onPress={() => setShowAddSheet(false)}>
-                    <Text style={[styles.addBtnText, { color: "#1C0F0D" }]}>Cancel</Text>
-                    </Pressable>
-                    <Pressable
-                    style={[styles.addBtn, { flex: 1, backgroundColor: Palette.pill, marginBottom: 0 }]}
-                    onPress={() => {
-                        add(newItem, Number(newQty), newUnit);
-                        setShowAddSheet(false);
-                        setUnitMode(false);
-                        setNewItem("");
-                        setNewQty("1");
-                        setNewUnit("");
-                    }}
-                    >
-                    <Text style={styles.addBtnText}>Add</Text>
-                    </Pressable>
-                </View>
-                </View>
-            )}
-            </BottomSheet>
-        </KeyboardAvoidingView>
-        </GestureHandlerRootView>
+      <BottomSheet
+        visible={showAddSheet}
+        onClose={() => {
+          setShowAddSheet(false);
+          setUnitMode(false);
+        }}
+      >
+        {unitMode ? (
+          <View style={styles.unitSheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Choose unit</Text>
+              <Pressable onPress={() => setUnitMode(false)}>
+                <Ionicons name="close" size={20} color="#3E2823" />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.unitScroll}>
+              {UNIT_OPTIONS.map((u) => (
+                <Pressable
+                  key={u || "none"}
+                  onPress={() => {
+                    setNewUnit(u as Unit);
+                    setUnitMode(false);
+                  }}
+                  style={styles.unitMenuItem}
+                >
+                  <Text style={styles.unitMenuText}>{u || "(none)"}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Add item</Text>
+            <View style={[styles.inputWrap, { marginTop: 14 }]}>
+              <TextInput
+                placeholder="Item name"
+                placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                value={newItem}
+                onChangeText={setNewItem}
+                returnKeyType="next"
+                style={styles.input}
+              />
+            </View>
+            <View style={[styles.qtyAddRow, { marginTop: 14 }]}>
+              <View style={styles.qtyInputWrap}>
+                <Text style={styles.qtyLabel}>Qty</Text>
+                <TextInput
+                  keyboardType="number-pad"
+                  value={newQty}
+                  onChangeText={(t) => setNewQty(t.replace(/[^0-9]/g, ""))}
+                  style={styles.qtyInput}
+                  placeholder="1"
+                  placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                  returnKeyType="done"
+                />
+              </View>
+              <Pressable onPress={() => setUnitMode(true)} style={styles.unitBtn}>
+                <Text style={styles.unitBtnText}>{newUnit || "unit"}</Text>
+                <Ionicons name="chevron-down" size={16} color="rgba(62, 40, 35, 0.5)" />
+              </Pressable>
+            </View>
+            <View style={styles.sheetActions}>
+              <Pressable style={styles.cancelBtn} onPress={() => setShowAddSheet(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.addConfirmBtn}
+                onPress={() => {
+                  add(newItem, Number(newQty), newUnit);
+                  setShowAddSheet(false);
+                  setUnitMode(false);
+                  setNewItem("");
+                  setNewQty("1");
+                  setNewUnit("");
+                }}
+              >
+                <Text style={styles.addBtnText}>Add</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </BottomSheet>
     </>
   );
 }
 
+/** ---------- Styles ---------- */
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  headerWrap: { paddingTop: 132, paddingHorizontal: 16, gap: 16, paddingBottom: 24 },
-  title: { fontSize: 20, fontWeight: "700", color: "#1C0F0D", fontFamily: "Poppins" },
-
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  safeAreaInner: {
+    flex: 1,
+  },
+  card: {
+    flex: 1,
+    marginTop: 12,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+    borderRadius: 28,
+    padding: 24,
+    paddingTop: 60,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
+    overflow: "hidden",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 16,
+  },
+  headerText: {
+    flex: 1,
+    gap: 8,
+  },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(236, 176, 152, 0.35)",
+    color: "#3E2823",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontFamily: "Poppins",
+    fontSize: 12,
+  },
+  title: {
+    fontFamily: "Poppins",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#3E2823",
+  },
+  subtitle: {
+    fontFamily: "Poppins",
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.7)",
+    lineHeight: 19,
+  },
+  addFloating: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  addFloatingPressed: {
+    opacity: 0.85,
+  },
+  listContent: {
+    paddingTop: 18,
+    paddingBottom: 96,
+  },
+  rowContainer: {
+    marginBottom: 14,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 12,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
     borderRadius: 8,
     borderWidth: 1,
-  },
-  rowLeft: { flexDirection: "row", alignItems: "center", flex: 1, gap: 8 },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
   },
-  checkboxDot: { width: 10, height: 10, borderRadius: 2, backgroundColor: "#BB9D93" },
-  rowText: { fontSize: 14, fontWeight: "600", fontFamily: "Poppins" },
-  rowSub: { fontSize: 12, color: "#98A2B3", marginTop: 2, fontFamily: "Poppins" },
-
-  stepperWrap: { flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 8 },
-  stepBtn: {
-    width: 28,
-    height: 28,
+  checkboxDot: {
+    width: 12,
+    height: 12,
     borderRadius: 6,
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#D4B2A7",
+  },
+  rowText: {
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Poppins",
+    color: "#3E2823",
+  },
+  rowSub: {
+    fontSize: 12,
+    color: "rgba(62, 40, 35, 0.55)",
+    marginTop: 2,
+    fontFamily: "Poppins",
+  },
+  stepperWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  stepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(212, 178, 167, 0.25)",
   },
   stepBtnText: {
-    fontSize: 18,
-    lineHeight: 18,
+    fontSize: 20,
+    lineHeight: 20,
     fontWeight: "400",
     fontFamily: "Poppins",
-    textAlign: "center",
-    marginTop: 7,
-    color: "#1C0F0D",
+    color: "#3E2823",
+    marginTop: 8,
   },
-  qtyText: { width: 24, textAlign: "center", fontWeight: "700", fontFamily: "Poppins", color: "#1C0F0D" },
-
-  addBarWrap: { gap: 12, paddingTop: 8, paddingBottom: 16 },
+  qtyText: {
+    minWidth: 28,
+    textAlign: "center",
+    fontWeight: "600",
+    fontFamily: "Poppins",
+    color: "#3E2823",
+  },
+  addBarWrap: {
+    marginTop: 20,
+  },
+  addFullWidth: {
+    borderRadius: 999,
+    backgroundColor: "#D4B2A7",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  addBtnText: {
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    color: "#FDF3F0",
+  },
+  emptyWrap: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 72,
+    gap: 12,
+  },
+  emptyIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(212, 178, 167, 0.18)",
+  },
+  emptyIconText: {
+    fontSize: 30,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.65)",
+    textAlign: "center",
+    fontFamily: "Poppins",
+  },
+  emptyButton: {
+    marginTop: 10,
+    borderRadius: 999,
+    backgroundColor: "#D4B2A7",
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  emptyButtonText: {
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    color: "#FDF3F0",
+  },
+  sheet: {
+    backgroundColor: "rgba(255, 253, 249, 0.98)",
+    padding: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    shadowColor: "#46302B",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 16,
+    gap: 12,
+  },
+  unitSheet: {
+    backgroundColor: "rgba(255, 253, 249, 0.98)",
+    padding: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    shadowColor: "#46302B",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 16,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
   inputWrap: {
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(236, 197, 210, 0.5)",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
-  input: { fontSize: 14, color: "#1C0F0D", fontFamily: "Poppins" },
-
-  qtyAddRow: { flexDirection: "row", gap: 12, alignItems: "center" },
+  input: {
+    fontSize: 15,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  qtyAddRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
   qtyInputWrap: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderColor: "rgba(236, 197, 210, 0.5)",
+    borderRadius: 18,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
   },
-  qtyLabel: { marginRight: 8, color: "#344054", fontFamily: "Poppins" },
-  qtyInput: { width: 56, fontSize: 14, color: "#1C0F0D", fontFamily: "Poppins" },
-
+  qtyLabel: {
+    marginRight: 8,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  qtyInput: {
+    width: 56,
+    fontSize: 15,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
   unitBtn: {
-    minWidth: 84,
-    height: 44,
-    paddingHorizontal: 10,
+    minWidth: 110,
     borderWidth: 1,
-    borderRadius: 8,
+    borderColor: "rgba(236, 197, 210, 0.5)",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+  },
+  unitBtnText: {
+    fontSize: 15,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  sheetActions: {
     flexDirection: "row",
-    gap: 6,
+    gap: 12,
+    marginTop: 18,
   },
-  unitBtnText: { fontSize: 14, color: "#1C0F0D", fontFamily: "Poppins" },
-  chev: { fontSize: 12, color: "#98A2B3", marginLeft: 6 },
-
-  unitMenuItem: { paddingHorizontal: 12, paddingVertical: 10 },
-  unitMenuText: { fontSize: 14, color: "#1C0F0D", fontFamily: "Poppins" },
-
-  addBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  addBtnText: { color: "#FFFFFF", fontWeight: "600", fontFamily: "Poppins" },
-
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    justifyContent: "flex-end",
-  },
-  backdropLight: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.15)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-  backgroundColor: "#FFF",
-  padding: 16,
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  shadowColor: "#000",
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: -2 },
-  elevation: 6,
-  paddingBottom: 32,
-  },
-  unitSheet: {
-  backgroundColor: "#FFF",
-  padding: 16,
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  shadowColor: "#000",
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: -2 },
-  elevation: 6,
-  },
-  sheetTitle: { fontSize: 16, fontWeight: "700", color: "#1C0F0D", fontFamily: "Poppins" },
   cancelBtn: {
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F2F4F7",
     flex: 1,
+    borderRadius: 18,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  cancelBtnText: {
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    color: "#3E2823",
+  },
+  addConfirmBtn: {
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "#D4B2A7",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  unitScroll: {
+    marginTop: 12,
+    maxHeight: 320,
+  },
+  unitMenuItem: {
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  unitMenuText: {
+    fontSize: 15,
+    color: "#3E2823",
+    fontFamily: "Poppins",
   },
   rightActionWrap: {
-    width: 100,
-    height: "100%",
-    backgroundColor: "#FFFAF0",
+    width: 96,
     justifyContent: "center",
     alignItems: "flex-end",
     paddingRight: 12,
   },
   rightActionButton: {
-    backgroundColor: "#FF6347",
-    borderRadius: 8,
+    backgroundColor: "#C26A77",
+    borderRadius: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
   },
   rightActionText: {
-    color: "#FFFFFF",
+    color: "#FDF3F0",
     fontWeight: "600",
     fontFamily: "Poppins",
   },
-  emptyWrap: {
-  alignItems: "center",
-  paddingHorizontal: 16,
-  paddingTop: 56,
-  paddingBottom: 64,
-  gap: 8,
-},
-emptyIcon: {
-  width: 64,
-  height: 64,
-  borderRadius: 32,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "rgba(212,178,167,0.15)", // soft pill tint
-  marginBottom: 8,
-},
-emptyIconText: { fontSize: 28 },
-emptyTitle: { fontSize: 18, fontWeight: "700", color: "#1C0F0D", fontFamily: "Poppins" },
-emptyText: { fontSize: 14, color: "#98A2B3", textAlign: "center", fontFamily: "Poppins", marginBottom: 8 },
-
 });

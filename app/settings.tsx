@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     shadowColor: "#3E2823",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
-    shadowRadius: 14,
+    shadowRadius: 6,
     elevation: 8,
   },
   row: {
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     shadowColor: "#2E1C18",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
-    shadowRadius: 16,
+    shadowRadius: 4,
     elevation: 10,
   },
   modalCancel: {

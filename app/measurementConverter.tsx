@@ -3,18 +3,19 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
+import { Path, Svg } from 'react-native-svg';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -90,6 +91,14 @@ function UnitPicker({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <LinearGradient
+          colors={["#FFF5F7", "rgba(255,245,247,0.78)", "rgba(255,250,250,0.45)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.2, 0.4, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Choose unit</Text>
           <ScrollView
@@ -202,15 +211,24 @@ export default function MeasurementConverter() {
   );
 
   return (
-  <>
-    <Stack.Screen options={{ headerShown: false }} />
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFDF9" }}>
-      <LinearGradient colors={gradientStops} style={StyleSheet.absoluteFillObject} />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.card}>
+          <BackButton />
+          <View style={styles.headerBlock}>
+            <Text style={styles.header}>Measurement Converter</Text>
+            <Text style={styles.subheader}>
+              Flip between volume and weight units, convert instantly, and keep your ratios silky-smooth.
+            </Text>
+          </View>
 
-      <BackButton />
-      <View style={styles.container}>
-        <Text style={styles.header}>Measurement Conversions</Text>
-        <View style={styles.toggleRow}>
+          <View style={styles.toggleRow}>
             {(["volume", "weight"] as UnitCategory[]).map((c) => {
               const active = c === category;
               return (
@@ -221,13 +239,13 @@ export default function MeasurementConverter() {
                     Haptics.selectionAsync();
                     setCategory(c);
                     if (c === "volume") {
-                      setLeftUnit(VOLUME_UNITS[3]); // cup
-                      setRightUnit(VOLUME_UNITS[0]); // tsp
+                      setLeftUnit(VOLUME_UNITS[3]);
+                      setRightUnit(VOLUME_UNITS[0]);
                       setLeftValue("1");
                       setRightValue(formatNumber(convert(1, VOLUME_UNITS[3], VOLUME_UNITS[0])));
                     } else {
-                      setLeftUnit(WEIGHT_UNITS[1]); // kg
-                      setRightUnit(WEIGHT_UNITS[2]); // oz
+                      setLeftUnit(WEIGHT_UNITS[1]);
+                      setRightUnit(WEIGHT_UNITS[2]);
                       setLeftValue("1");
                       setRightValue(formatNumber(convert(1, WEIGHT_UNITS[1], WEIGHT_UNITS[2])));
                     }
@@ -241,187 +259,306 @@ export default function MeasurementConverter() {
             })}
           </View>
 
-        {/* Body: converter panel a bit higher on screen */}
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={{ flex: 1 }}
-          >
-            <View style={styles.contentWrapper}>
-              <View style={styles.panel}>
-                <View style={styles.row}>
-                  {/* Left */}
-                  <View style={styles.side}>
-                    <TextInput
-                      value={leftValue}
-                      onChangeText={updateFromLeft}
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                      placeholderTextColor="#B9A8A1"
-                      style={styles.valueBox}
-                    />
-                    <Pressable
-                      onPress={() => { Haptics.selectionAsync(); setPickSide("left"); }}
-                      style={styles.unitChip}
-                    >
-                      <Text style={styles.unitChipText}>{leftUnit.label}</Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Swap */}
-                  <Pressable onPress={swap} style={styles.swap}>
-                    <Text style={styles.swapIcon}>⇄</Text>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.converterWrapper}
+            >
+              <View style={styles.converterPanel}>
+                <View style={styles.valueColumn}>
+                  <Text style={styles.fieldLabel}>From</Text>
+                  <TextInput
+                    value={leftValue}
+                    onChangeText={updateFromLeft}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    placeholderTextColor="#B9A8A1"
+                    style={styles.valueBox}
+                  />
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setPickSide("left"); }}
+                    style={styles.unitChip}
+                  >
+                    <Text style={styles.unitChipText}>{leftUnit.label}</Text>
                   </Pressable>
-
-                  {/* Right */}
-                  <View style={styles.side}>
-                    <TextInput
-                      value={rightValue}
-                      onChangeText={updateFromRight}
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                      placeholderTextColor="#B9A8A1"
-                      style={styles.valueBox}
-                    />
-                    <Pressable
-                      onPress={() => { Haptics.selectionAsync(); setPickSide("right"); }}
-                      style={styles.unitChip}
-                    >
-                      <Text style={styles.unitChipText}>{rightUnit.label}</Text>
-                    </Pressable>
-                  </View>
                 </View>
 
-                <Text style={styles.helper}>
-                  Tip: tap either value or unit to edit • {category} units only
+                <Pressable onPress={swap} style={styles.swap}>
+                  <Svg width="32" height="32" viewBox="0 0 256 256" fill="#8E746B">
+                    <Path
+                      d="M213.66,181.66l-32,32a8,8,0,0,1-11.32-11.32L188.69,184H48a8,8,0,0,1,0-16H188.69l-18.35-18.34a8,8,0,0,1,11.32-11.32l32,32A8,8,0,0,1,213.66,181.66Zm-139.32-64a8,8,0,0,0,11.32-11.32L67.31,88H208a8,8,0,0,0,0-16H67.31L85.66,53.66A8,8,0,0,0,74.34,42.34l-32,32a8,8,0,0,0,0,11.32Z"
+                      stroke="#8E746B"
+                      strokeWidth={0.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </Pressable>
+
+                <View style={styles.valueColumn}>
+                  <Text style={styles.fieldLabel}>To</Text>
+                  <TextInput
+                    value={rightValue}
+                    onChangeText={updateFromRight}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    placeholderTextColor="#B9A8A1"
+                    style={styles.valueBox}
+                  />
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setPickSide("right"); }}
+                    style={styles.unitChip}
+                  >
+                    <Text style={styles.unitChipText}>{rightUnit.label}</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.helperPanel}>
+                <Text style={styles.helperTitle}>Conversion Tips</Text>
+                <Text style={styles.helperText}>
+                  • Tap either value to edit and instantly convert.{'\n'}
+                  • Unit lists are tailored to {category === "volume" ? "liquids" : "weights"}—swap tabs anytime.{'\n'}
+                  • Tap the swap icon to quickly toggle directions.
                 </Text>
               </View>
-            </View>
-
-            <UnitPicker
-              visible={pickSide !== null}
-              current={(pickSide === "left" ? leftUnit : rightUnit).key}
-              units={unitList}
-              onClose={() => setPickSide(null)}
-              onSelect={handlePick}
-            />
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
         </View>
-    </SafeAreaView>
-  </>
-);
+      </SafeAreaView>
+      </ScrollView>
+      </LinearGradient>
+
+      <UnitPicker
+        visible={pickSide !== null}
+        current={(pickSide === "left" ? leftUnit : rightUnit).key}
+        units={unitList}
+        onClose={() => setPickSide(null)}
+        onSelect={handlePick}
+      />
+    </>
+  );
 }
 
 /** ---------- Styles ---------- */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, position: "relative", backgroundColor: "#FFFDF9" },             
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 48,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  card: {
+    flex: 1,
+    marginTop: -25,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+    borderRadius: 28,
+    padding: 24,
+    paddingTop: 72,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  headerBlock: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(236, 176, 152, 0.35)",
+    color: "#3E2823",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontFamily: "Poppins",
+    fontSize: 12,
+  },
   header: {
-    marginTop: 36,
-    marginLeft: 8,
-    marginBottom: 36,
     fontFamily: "Poppins",
     fontSize: 24,
     fontWeight: "700",
-    color: "#1C0F0D",
-    textAlign: "left",
+    color: "#3E2823",
   },
-
+  subheader: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "rgba(62, 40, 35, 0.7)",
+    lineHeight: 20,
+  },
   toggleRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 12,
-    marginBottom: 16,
-    marginTop: 16,
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: "flex-start",                               
-    paddingTop: 12,                                              
+    marginBottom: 24,
   },
   toggleChip: {
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: "#F3E0DC",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
   },
   toggleChipActive: {
-    backgroundColor: "#EAC1B7",
+    backgroundColor: "#D4B2A7",
   },
   toggleText: {
     fontSize: 15,
     fontWeight: "600",
     color: "#8E746B",
+    fontFamily: "Poppins",
   },
   toggleTextActive: {
     color: "#2B1E1A",
   },
-  panel: {
-    marginTop: 16,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    borderRadius: 24,
-    backgroundColor: "rgba(234,193,183,0.15)",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+  converterWrapper: {
+    flex: 1,
   },
-  row: {
+  converterPanel: {
     flexDirection: "row",
     alignItems: "center",
     gap: 18,
-    justifyContent: "space-between",
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    backgroundColor: "rgba(234,193,183,0.18)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 10,
   },
-  side: { flex: 1, alignItems: "center", gap: 12 },
+  valueColumn: {
+    flex: 1,
+    alignItems: "center",
+    gap: 10,
+  },
+  fieldLabel: {
+    fontFamily: "Poppins",
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.65)",
+  },
   valueBox: {
     width: "100%",
     textAlign: "center",
-    fontSize: 32,
-    fontWeight: "800",
-    paddingVertical: 22,
-    borderRadius: 22,
-    backgroundColor: "#EAC1B7",
+    fontSize: 30,
+    fontFamily: "Poppins",
+    fontWeight: "700",
+    paddingVertical: 18,
+    paddingHorizontal: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
     color: "#2B1E1A",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
   },
   unitChip: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: "#EAC1B7",
-    opacity: 0.95,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
   },
   unitChipText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#5A4038",
-    letterSpacing: 0.3,
+    fontFamily: "Poppins",
   },
   swap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    backgroundColor: "#FFEDE8",
+    backgroundColor: "#FFF3EF",
     borderWidth: 1,
-    borderColor: "rgba(234,193,183,0.65)",
+    borderColor: "rgba(212,178,167,0.4)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
   },
-  swapIcon: { fontSize: 22, fontWeight: "700", color: "#3B2A25" },
-  helper: { marginTop: 16, textAlign: "center", color: "#8E746B" },
-
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", padding: 24, justifyContent: "center" },
-  modalCard: { borderRadius: 20, backgroundColor: "#FFF9F7", padding: 16 },
-  modalTitle: { fontSize: 16, fontWeight: "800", color: "#3B2A25", marginBottom: 6 },
-  unitRow: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12 },
-  unitRowActive: { backgroundColor: "#FFE5DE" },
-  unitRowText: { fontSize: 16, color: "#3B2A25" },
-  unitRowTextActive: { fontWeight: "700" },
+  helperPanel: {
+    marginTop: 20,
+    borderRadius: 20,
+    padding: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  helperTitle: {
+    fontFamily: "Poppins",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#3E2823",
+    marginBottom: 8,
+  },
+  helperText: {
+    fontFamily: "Poppins",
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.7)",
+    lineHeight: 18,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(28, 15, 13, 0.12)",
+    padding: 24,
+    justifyContent: "center",
+  },
+  modalCard: {
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 253, 249, 0.98)",
+    padding: 20,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3E2823",
+    marginBottom: 10,
+    fontFamily: "Poppins",
+  },
+  unitRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+  },
+  unitRowActive: {
+    backgroundColor: "rgba(236, 197, 210, 0.35)",
+  },
+  unitRowText: {
+    fontSize: 16,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  unitRowTextActive: {
+    fontWeight: "700",
+  },
 });

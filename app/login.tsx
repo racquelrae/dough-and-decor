@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     shadowColor: '#3E2823',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 3,
   },
   passwordWrapper: {
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     shadowColor: '#2E1C18',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
-    shadowRadius: 18,
+    shadowRadius: 6,
     elevation: 12,
     marginTop: 8,
   },

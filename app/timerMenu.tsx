@@ -4,8 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,6 +14,8 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  PanResponder,
+  Pressable
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { BackButton } from '../components/BackButton';
@@ -89,6 +91,8 @@ export default function TimerMenuScreen() {
   const { width, height } = useWindowDimensions();
   const cols = width > 720 ? 4 : width > 480 ? 3 : 2;
   const fadeHeight = Math.min(height * 0.55, 520);
+  const [backdrop] = useState(new Animated.Value(1));
+  const [sheetY] = useState(new Animated.Value(height));
 
   useFocusEffect(
     useCallback(() => {
@@ -98,11 +102,59 @@ export default function TimerMenuScreen() {
     }, [])
   );
 
+  const closeThreshold = 120; 
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 4,
+    onPanResponderMove: (_, gesture) => {
+      const next = Math.max(0, gesture.dy);
+      sheetY.setValue(next);
+    },
+    onPanResponderRelease: (_, gesture) => {
+      const shouldClose = gesture.dy > closeThreshold || gesture.vy > 0.9;
+      if (shouldClose) {
+        Animated.parallel([
+          Animated.timing(backdrop, { toValue: 0, duration: 180, useNativeDriver: true }),
+          Animated.timing(sheetY, { toValue: height, duration: 220, useNativeDriver: true }),
+        ]).start(() => setShowCustom(false));
+      } else {
+        Animated.spring(sheetY, {
+          toValue: 0,
+          useNativeDriver: true,
+          bounciness: 6,
+          speed: 14,
+        }).start();
+      }
+    },
+  });
+
   const openCustomModal = () => {
     setCustomMinutes('');
     setCustomSeconds('');
     setCustomError('');
     setShowCustom(true);
+
+    // reset start positions
+    backdrop.setValue(0);
+    sheetY.setValue(height);
+
+    Animated.parallel([
+      Animated.timing(backdrop, { toValue: 1, duration: 220, useNativeDriver: true }),
+      Animated.spring(sheetY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 8,   // lil’ bounce like icing screen
+        speed: 14,
+      }),
+    ]).start();
+  };
+
+  const handleCloseModal = () => {
+    Animated.parallel([
+      Animated.timing(backdrop, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(sheetY, { toValue: height, duration: 220, useNativeDriver: true }),
+    ]).start(() => setShowCustom(false));
   };
 
   const handleCreateCustomTimer = () => {
@@ -124,19 +176,19 @@ export default function TimerMenuScreen() {
       return;
     }
 
-    setShowCustom(false);
-    setCustomError('');
-    navigation.navigate('Timer', { seconds: totalSeconds });
+  handleCloseModal();
+  setCustomError('');
+  navigation.navigate('Timer', { seconds: totalSeconds });
   };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
           <View style={styles.card}>
             <BackButton />
             <View style={styles.headerRow}>
@@ -187,86 +239,111 @@ export default function TimerMenuScreen() {
           </View>
         </ScrollView>
         <AddButton onPress={openCustomModal} />
-      </LinearGradient>
+        {showCustom && (
+          <View
+            style={StyleSheet.absoluteFill}
+            pointerEvents="box-none"
+          >
+            {/* Backdrop */}
+            <Pressable
+              onPress={handleCloseModal}
+              style={StyleSheet.absoluteFill}
+            >
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    opacity: backdrop.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }),
+                    backgroundColor: 'rgba(0,0,0,0.28)', // slightly darker for stronger focus
+                  },
+                ]}
+                pointerEvents="none"
+              />
+            </Pressable>
 
-      <Modal transparent animationType="slide" visible={showCustom} onRequestClose={() => setShowCustom(false)}>
-        <View style={styles.modalOverlay}>
-          <LinearGradient
-                  colors={[
-                      "#f9e8de69",                  
-                      "rgba(255,245,247,0.55)",      
-                      "rgba(255,250,250,0.35)",      
-                      "rgba(255,255,255,0.25)",     
-                      "rgba(255,255,255,0)",         
-                  ]}
-                  locations={[0, 0.12, 0.26, 0.42, 1]} 
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
+            {/* Bottom sheet (draggable) */}
+            <KeyboardAvoidingView
+              style={styles.modalCardWrapper}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              pointerEvents="box-none"
+            >
+              <Animated.View
+                {...panResponder.panHandlers}
+                style={[
+                  styles.modalCard,
+                  {
+                    transform: [{ translateY: sheetY }],
+                    backgroundColor: 'rgba(255, 253, 249, 0.98)',
+                  },
+                ]}
+              >
+                {/* A small grabber to suggest drag */}
+                <View
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: fadeHeight,
-                    zIndex: -1,
+                    alignSelf: 'center',
+                    width: 36,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: 'rgba(62, 40, 35, 0.22)',
+                    marginBottom: 12,
                   }}
                 />
-          <KeyboardAvoidingView
-            style={styles.modalCardWrapper}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          >
-            <View style={styles.modalCard}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Create Custom Timer</Text>
-                <Text style={styles.modalSubtitle}>Set the length that suits your bake.</Text>
-              </View>
-              <View style={styles.inputRow}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Minutes</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    keyboardType="number-pad"
-                    placeholder="0"
-                    placeholderTextColor="rgba(62, 40, 35, 0.35)"
-                    value={customMinutes}
-                    onChangeText={text => setCustomMinutes(text.replace(/[^0-9]/g, ''))}
-                    maxLength={3}
-                  />
+
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Create Custom Timer</Text>
+                  <Text style={styles.modalSubtitle}>Set the length that suits your bake.</Text>
                 </View>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Seconds</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    keyboardType="number-pad"
-                    placeholder="0"
-                    placeholderTextColor="rgba(62, 40, 35, 0.35)"
-                    value={customSeconds}
-                    onChangeText={text => setCustomSeconds(text.replace(/[^0-9]/g, ''))}
-                    maxLength={2}
-                  />
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Minutes</Text>
+                    <TextInput
+                      style={styles.timeInput}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                      value={customMinutes}
+                      onChangeText={text => setCustomMinutes(text.replace(/[^0-9]/g, ''))}
+                      maxLength={3}
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Seconds</Text>
+                    <TextInput
+                      style={styles.timeInput}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                      value={customSeconds}
+                      onChangeText={text => setCustomSeconds(text.replace(/[^0-9]/g, ''))}
+                      maxLength={2}
+                    />
+                  </View>
                 </View>
-              </View>
-              {customError ? <Text style={styles.modalError}>{customError}</Text> : null}
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalCancel]}
-                  onPress={() => setShowCustom(false)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalCancelText]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalConfirm]}
-                  onPress={handleCreateCustomTimer}
-                  activeOpacity={0.9}
-                >
-                  <Text style={styles.modalButtonText}>Start Timer</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+
+                {customError ? <Text style={styles.modalError}>{customError}</Text> : null}
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalCancel]}
+                    onPress={handleCloseModal}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.modalButtonText, styles.modalCancelText]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalConfirm]}
+                    onPress={handleCreateCustomTimer}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.modalButtonText}>Start Timer</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </KeyboardAvoidingView>
+          </View>
+        )}
+      </LinearGradient>
     </>
   );
 }
@@ -337,7 +414,7 @@ const styles = StyleSheet.create({
   timerCard: {
     overflow: 'hidden',
     borderRadius: 20,
-    backgroundColor: 'rgba(250, 242, 242, 0.88)',
+    backgroundColor: 'rgba(237, 199, 186, 0.3)',
     padding: 22,
     marginBottom: 14,
     flexDirection: 'row',
@@ -346,7 +423,7 @@ const styles = StyleSheet.create({
     shadowColor: '#3E2823',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
-    shadowRadius: 16,
+    shadowRadius: 6,
     elevation: 10,
   },
   timerCardBackground: {
@@ -375,7 +452,7 @@ const styles = StyleSheet.create({
   activityCard: {
     overflow: 'hidden',
     borderRadius: 18,
-    backgroundColor: 'rgba(250, 242, 242, 0.88)',
+    backgroundColor: 'rgba(237, 199, 186, 0.3)',
     paddingVertical: 16,
     paddingHorizontal: 18,
     flexDirection: 'row',
@@ -385,7 +462,7 @@ const styles = StyleSheet.create({
     shadowColor: '#3E2823',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
-    shadowRadius: 14,
+    shadowRadius: 6,
     elevation: 8,
   },
   activityCardBackground: {
@@ -396,10 +473,11 @@ const styles = StyleSheet.create({
   activityCardIcon: {
     width: 45,
     height: 45,
-    borderRadius: 20,
-    backgroundColor: 'rgba(250, 242, 242, 0.88)',
+    borderRadius: 25,
+    backgroundColor: 'rgba(237, 199, 186, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 2,
   },
   activityCardTime: {
     fontFamily: 'Poppins',
@@ -425,7 +503,7 @@ const styles = StyleSheet.create({
     shadowColor: '#2E1C18',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
-    shadowRadius: 20,
+    shadowRadius: 4,
     elevation: 12,
     overflow: 'hidden',
   },
@@ -518,14 +596,14 @@ const styles = StyleSheet.create({
     shadowColor: '#2E1C18',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
-    shadowRadius: 16,
+    shadowRadius: 4,
     elevation: 8,
   },
   modalCancel: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   modalConfirm: {
-    backgroundColor: 'rgba(236, 176, 152, 0.35)',
+    backgroundColor: '#EDC7BA',
   },
   modalButtonText: {
     fontFamily: 'Poppins',

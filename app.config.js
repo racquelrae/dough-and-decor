@@ -6,7 +6,7 @@ export default {
     slug: "dough-and-decor",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/dough&decor_icon.png",
     scheme: "doughanddecor",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -22,7 +22,7 @@ export default {
     android: {
       package: "com.yourname.doughanddecor",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/images/dough&decor_icon.png",
         backgroundColor: "#ffffff"
       },
       edgeToEdgeEnabled: true,
@@ -36,7 +36,7 @@ export default {
     plugins: [
       "expo-router",
       ["expo-splash-screen", {
-        image: "./assets/images/splash-icon.png",
+        image: "./assets/images/dough&decor_icon.png",
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#ffffff"

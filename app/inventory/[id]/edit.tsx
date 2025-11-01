@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ItemForm, ItemFormValues } from "@/components/inventory/itemForm";
 import { getItemOnce, updateItem } from "@/firebase/inventory";
 import { Timestamp } from "firebase/firestore";
+import { LinearGradient } from "expo-linear-gradient";
+import { BackButton } from "@/components/BackButton";
 
 export default function InventoryEdit() {
   const navigation = useNavigation();
@@ -16,7 +18,10 @@ export default function InventoryEdit() {
   useEffect(() => {
     (async () => {
       const data = await getItemOnce(categoryId, id);
-  if (!data) { navigation.goBack(); return; }
+      if (!data) {
+        navigation.goBack();
+        return;
+      }
       setInitial({
         name: data.name ?? "",
         quantity: data.quantity ?? 1,
@@ -26,7 +31,7 @@ export default function InventoryEdit() {
         thumbUrl: data.thumbUrl ?? null,
         notes: data.notes ?? "",
         autoAddToList: !!data.autoAddToList,
-        min: (data.min === 0 || data.min) ? Number(data.min) : null,
+        min: data.min === 0 || data.min ? Number(data.min) : null,
       });
     })();
   }, [categoryId, id]);
@@ -43,20 +48,30 @@ export default function InventoryEdit() {
       autoAddToList: !!v.autoAddToList,
       min: v.autoAddToList ? (v.min ?? 0) : null,
     });
-  navigation.goBack();
+    navigation.goBack();
   };
 
   if (!initial) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator />
-      </SafeAreaView>
+      <LinearGradient colors={["#F9E8DE", "#D9B6AB"]} style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color="#D4B2A7" />
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFDF9" }}>
-      <ItemForm mode="edit" initial={initial} onSubmit={handleSubmit} onCancel={() => navigation.goBack()} />
-    </SafeAreaView>
+    <LinearGradient colors={["#F9E8DE", "#D9B6AB"]} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 16 }}>
+        <BackButton />
+        <ItemForm
+          mode="edit"
+          initial={initial}
+          onSubmit={handleSubmit}
+          onCancel={() => navigation.goBack()}
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

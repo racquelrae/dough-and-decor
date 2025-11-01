@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Platform, ScrollView } from 'react-native';
 import Svg, {
   Circle,
   Path,
@@ -241,6 +241,10 @@ export default function TimerScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={['#F9E8DE', '#D9B6AB']} style={styles.gradient}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.card}>
           <BackButton />
           <View style={styles.headerRow}>
@@ -304,6 +308,7 @@ export default function TimerScreen() {
             <QuitButton isStopped={isStopped} onPress={handleQuitPress} />
           </View>
         </View>
+        </ScrollView>
       </LinearGradient>
     </>
   );
@@ -313,10 +318,14 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 48,
+  },
   card: {
     flex: 1,
-    margin: 20,
-    marginTop: 72,
+    marginTop: 40,
     backgroundColor: 'rgba(255, 253, 249, 0.92)',
     borderRadius: 28,
     padding: 28,

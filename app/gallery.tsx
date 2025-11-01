@@ -1,13 +1,27 @@
 // app/(tabs)/gallery.tsx  or wherever you route it
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, Image, Pressable, Alert, TextInput, ScrollView, Modal, Platform } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { getAuth } from "firebase/auth";
-import { addGalleryItem, deleteGalleryItem, GalleryItem, watchGallery, updateGalleryItemTags } from "@/firebase/gallery";
-import { uploadToCloudinary, thumb } from "@/lib/cloudinary";
-import { Ionicons } from "@expo/vector-icons";
 import { BackButton } from "@/components/BackButton";
+import { addGalleryItem, deleteGalleryItem, GalleryItem, updateGalleryItemTags, watchGallery } from "@/firebase/gallery";
+import { thumb, uploadToCloudinary } from "@/lib/cloudinary";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { getAuth } from "firebase/auth";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function normalizeTags(raw: string): string[] {
   return raw
@@ -58,6 +72,14 @@ function useTagPrompt() {
   const node = (
     <Modal visible={open} transparent animationType="fade">
       <View style={styles.modalBackdrop}>
+        <LinearGradient
+          colors={["#FFF5F7", "rgba(255,245,247,0.78)", "rgba(255,250,250,0.4)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.2, 0.4, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Edit tags</Text>
           <Text style={styles.modalHint}>Comma-separated (e.g., flowers, royal icing, pink)</Text>
@@ -117,7 +139,7 @@ function EmptyState({
         </Pressable>
       ) : hasActiveFilters ? (
         <Pressable onPress={onClearFilters} style={[styles.emptyBtn, styles.emptyBtnGhost]}>
-          <Text style={[styles.emptyBtnText, { color: "#1C0F0D" }]}>Clear filters</Text>
+          <Text style={[styles.emptyBtnText, styles.emptyBtnTextGhost]}>Clear filters</Text>
         </Pressable>
       ) : null}
     </View>
@@ -129,8 +151,11 @@ export default function InspirationGalleryScreen() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [lightbox, setLightbox] = useState<{ open: boolean; item?: GalleryItem }>({ open: false });
   const hasActiveFilters = selectedTags.length > 0 || search.trim().length > 0;
   const { prompt: promptTags, node: tagPromptNode } = useTagPrompt();
+  const { width, height } = useWindowDimensions();
+  const columnCount = width >= 1200 ? 4 : width >= 900 ? 3 : 2;
 
     const onAdd = useCallback(async () => {
     try {
@@ -193,6 +218,22 @@ export default function InspirationGalleryScreen() {
     return data;
   }, [items, selectedTags, search]);
 
+  const masonryColumns = useMemo(() => {
+    const columns = Array.from({ length: columnCount }, () => ({
+      items: [] as GalleryItem[],
+      height: 0,
+    }));
+
+    filtered.forEach((item) => {
+      const aspect = item.height > 0 && item.width > 0 ? item.height / item.width : 1;
+      const target = columns.reduce((prev, curr) => (curr.height < prev.height ? curr : prev));
+      target.items.push(item);
+      target.height += aspect;
+    });
+
+    return columns.map((col) => col.items);
+  }, [filtered, columnCount]);
+
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -200,65 +241,157 @@ export default function InspirationGalleryScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <BackButton />
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Inspiration Gallery</Text>
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <Pressable onPress={onAdd} hitSlop={10}>
-            <Ionicons name="add-circle" size={26} color="#D4B2A7" />
-          </Pressable>
-        </View>
-      </View>
+    <>
+      <LinearGradient colors={["#F9E8DE", "#D9B6AB"]} style={styles.gradient} />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.mainCard}>
+          <BackButton />
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>Inspiration Gallery</Text>
+              <Text style={styles.subtitle}>
+                Save bakes, palettes, and piping ideas. Filter or search by tags to find sparks of creativity.
+              </Text>
+            </View>
+            <Pressable
+              onPress={onAdd}
+              style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+              hitSlop={10}
+            >
+              <Ionicons name="add" size={24} color="#3E2823" />
+            </Pressable>
+          </View>
 
-      <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search notes or tags…"
-          style={styles.searchInput}
-          autoCorrect={false}
-        />
-      </View>
-     
-      {allTags.length > 0 && (
-        <View style={styles.tagsBar}>
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={18} color="rgba(62, 40, 35, 0.6)" />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search photos…"
+              placeholderTextColor="rgba(62, 40, 35, 0.45)"
+              style={styles.searchInput}
+              autoCorrect={false}
+            />
+            {search ? (
+              <Pressable onPress={() => setSearch("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color="rgba(62, 40, 35, 0.35)" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {allTags.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tagScroller}
+              style={styles.tagsBar}
+            >
+              <TagChip label="All" active={selectedTags.length === 0} onPress={() => setSelectedTags([])} />
+              {allTags.map((t) => (
+                <TagChip key={t} label={t} active={selectedTags.includes(t)} onPress={() => toggleTag(t)} />
+              ))}
+            </ScrollView>
+          )}
+
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tagScroller}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.masonryScroll}
           >
-          <TagChip
-            label="All"
-            active={selectedTags.length === 0}
-            onPress={() => setSelectedTags([])}
-          />
-          {allTags.map((t) => (
-            <TagChip key={t} label={t} active={selectedTags.includes(t)} onPress={() => toggleTag(t)} />
-          ))}
-        </ScrollView>
-      </View>
-      )}
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(i) => i.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 10 }}
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 16, gap: 10, flexGrow: 1 }}
-        renderItem={({ item }) => <GalleryCard item={item} onDelete={(photo) => deleteGalleryItem(uid, photo.id)} uid={uid} promptTags={promptTags} />}
-        ListEmptyComponent={
-          <EmptyState
-            hasAnyItems={items.length > 0}
-            hasActiveFilters={hasActiveFilters}
-            onAdd={onAdd}
-            onClearFilters={onClearFilters}
-          />
-        }
-      />
+            {filtered.length === 0 ? (
+              <EmptyState
+                hasAnyItems={items.length > 0}
+                hasActiveFilters={hasActiveFilters}
+                onAdd={onAdd}
+                onClearFilters={onClearFilters}
+              />
+            ) : (
+              <View style={styles.masonry}>
+        {masonryColumns.map((column, idx) => (
+          <View key={idx} style={styles.masonryColumn}>
+            {column.map((item) => (
+              <GalleryCard
+                key={item.id}
+                item={item}
+                onDelete={(photo) => deleteGalleryItem(uid, photo.id)}
+                uid={uid}
+                promptTags={promptTags}
+                onPreview={(selected) => setLightbox({ open: true, item: selected })}
+              />
+            ))}
+          </View>
+        ))}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </SafeAreaView>
       {tagPromptNode}
-    </View>
+
+      {lightbox.open && lightbox.item ? (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLightbox({ open: false })}
+        >
+          <Pressable style={styles.lightboxBackdrop} onPress={() => setLightbox({ open: false })}>
+            <LinearGradient
+              colors={["rgba(0,0,0,0.75)", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.75)"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+              pointerEvents="none"
+            />
+            <Pressable
+              onPress={(e) => e.stopPropagation()}
+              style={styles.lightboxContent}
+            >
+              {/* Calculate image size based on window and aspect ratio, using top-level hook values */}
+              {(() => {
+                const imgWidth = lightbox.item?.width || 800;
+                const imgHeight = lightbox.item?.height || 800;
+                const aspect = imgWidth > 0 && imgHeight > 0 ? imgWidth / imgHeight : 1;
+                // Max width/height for modal image
+                const maxW = Math.min(width * 0.85, 800);
+                const maxH = Math.min(height * 0.65, 800);
+                let displayW = maxW;
+                let displayH = maxW / aspect;
+                if (displayH > maxH) {
+                  displayH = maxH;
+                  displayW = maxH * aspect;
+                }
+                return (
+                  <Image
+                    source={{ uri: lightbox.item.url }}
+                    style={{
+                      width: displayW,
+                      height: displayH,
+                      borderRadius: 24,
+                      backgroundColor: "#fff",
+                    }}
+                    resizeMode="contain"
+                  />
+                );
+              })()}
+              <View style={styles.lightboxMeta}>
+                {lightbox.item.tags?.length ? (
+                  <View style={styles.lightboxTags}>
+                    {lightbox.item.tags.map((t) => (
+                      <View style={styles.lightboxTag} key={t}>
+                        <Text style={styles.lightboxTagText}>{t}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+                {lightbox.item.note ? (
+                  <Text style={styles.lightboxNote}>{lightbox.item.note}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
+    </>
   );
 }
 
@@ -285,144 +418,379 @@ function TagChip({ label, active, onPress }: { label: string; active?: boolean; 
   );
 }
 
-function GalleryCard({ item, onDelete, uid, promptTags }: { item: GalleryItem; onDelete: (item: GalleryItem) => void; uid: string; promptTags: (initial?: string) => Promise<string[]>; }) {
-  // keep aspect ratio
-  const ratio = item.height > 0 ? item.width / item.height : 1;
+function GalleryCard({
+  item,
+  onDelete,
+  uid,
+  promptTags,
+  onPreview,
+}: {
+  item: GalleryItem;
+  onDelete: (item: GalleryItem) => void;
+  uid: string;
+  promptTags: (initial?: string) => Promise<string[]>;
+  onPreview: (item: GalleryItem) => void;
+}) {
+  const aspectRatio = item.height > 0 && item.width > 0 ? item.width / item.height : 1;
 
   const confirmDelete = useCallback(async () => {
-  // a slightly stronger tap so it feels intentional
-  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-  Alert.alert(
-    "Delete photo?",
-    "This can’t be undone.",
-    [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => onDelete(item) },
-    ]
-  );
-}, [item, onDelete]);
+    Alert.alert(
+      "Delete photo?",
+      "This can’t be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => onDelete(item) },
+      ]
+    );
+  }, [item, onDelete]);
 
   const handleLongPress = useCallback(async () => {
-  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-  Alert.alert("Photo options", undefined, [
-    { text: "Cancel", style: "cancel" },
-    {
-      text: "Edit tags",
-      onPress: async () => {
-        // pre-fill with current tags joined by commas
-        const newTags = await promptTags(item.tags?.join(", ") || "");
-        if (newTags) {
-          updateGalleryItemTags(uid, item.id, newTags);
-        }
+    Alert.alert("Photo options", undefined, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Edit tags",
+        onPress: async () => {
+          const newTags = await promptTags(item.tags?.join(", ") || "");
+          if (newTags) {
+            updateGalleryItemTags(uid, item.id, newTags);
+          }
+        },
       },
-    },
-    {
-      text: "Delete",
-      style: "destructive",
-      onPress: () => confirmDelete(),
-    },
-   ]);
- }, [item, onDelete, uid, promptTags, confirmDelete]);
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => confirmDelete(),
+      },
+    ]);
+  }, [item, onDelete, uid, promptTags, confirmDelete]);
 
   return (
-    <View style={styles.card}>
-      <Pressable onLongPress={handleLongPress} style={{ borderRadius: 12, overflow: "hidden" }}>
+    <Pressable onPress={() => onPreview(item)} onLongPress={handleLongPress} style={styles.card}>
+      <View style={styles.cardImageWrap}>
         <Image
           source={{ uri: item.thumbnailUrl || item.url }}
-          style={{ width: "100%", aspectRatio: ratio }}
+          style={[styles.cardImage, { aspectRatio }]}
         />
-      </Pressable>
-      {item.tags?.length ? (
-        <View style={styles.cardTags}>
-          {item.tags.slice(0, 3).map((t) => (
-            <View style={styles.cardTag} key={t}><Text style={styles.cardTagText}>{t}</Text></View>
-          ))}
-          {item.tags.length > 3 && <Text style={styles.moreTag}>+{item.tags.length - 3}</Text>}
-        </View>
-      ) : null}
-    </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, marginTop: 40 },
-  title: { fontFamily: 'Poppins', color: '#1C0F0D', fontSize: 20, fontWeight: "700", marginTop:64, marginLeft: 16 },
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 16, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#f5f5f7" },
-  searchInput: { flex: 1, paddingVertical: 2 },
-  tagsBar: {
-    height: 40,                
-    marginTop: 6,
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
   },
-  tagScroller: {
-    paddingHorizontal: 16,
-    paddingVertical: 0,
-    alignItems: "center",
-  },
-  chip: { alignSelf:"center", marginRight: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: "#e6e6ea", backgroundColor: "#fff" },
-  chipActive: { backgroundColor: "#efd9d9", borderColor: "#efd9d9" },
-  chipPressed: {opacity: 0.7},
-  chipText: { fontSize: 13, color: "#333", lineHeight:16 },
-  chipTextActive: { fontWeight: "600" },
-  card: { flex: 1, backgroundColor: "#fff", borderRadius: 12, overflow: "hidden", marginTop: 10 },
-  cardTags: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 6 },
-  cardTag: { backgroundColor: "#f1eef6", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  cardTagText: { fontSize: 11, color: "#5f4b8b" },
-  moreTag: { fontSize: 11, color: "#888" },
-
-  // empty state styles
-  emptyWrap: {
+  safeArea: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  mainCard: {
+    flex: 1,
+    marginTop: 20,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+    borderRadius: 28,
+    padding: 24,
+    paddingTop: 72,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 12,
+    overflow: "hidden",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 16,
+  },
+  headerText: {
+    flex: 1,
+    gap: 8,
+  },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(236, 176, 152, 0.35)",
+    color: "#3E2823",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    fontFamily: "Poppins",
+    fontSize: 12,
+  },
+  title: {
+    fontFamily: "Poppins",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#3E2823",
+  },
+  subtitle: {
+    fontFamily: "Poppins",
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.7)",
+    lineHeight: 19,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
-    gap: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 6,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#1C0F0D", marginTop: 8 },
-  emptyText: { fontSize: 14, color: "#6b6b6b", textAlign: "center" },
-  emptyBtn: {
-    marginTop: 12,
+  addButtonPressed: {
+    opacity: 0.85,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 18,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#3E2823",
+    paddingVertical: 0,
+  },
+  tagsBar: {
+    marginTop: 14,
+    marginBottom: 16,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+  },
+  tagScroller: {
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  masonryScroll: {
+    paddingTop: 18,
+    paddingBottom: 80,
+  },
+  masonry: {
+    flexDirection: "row",
+    gap: 18,
+    alignItems: "flex-start",
+  },
+  masonryColumn: {
+    flex: 1,
+    gap: 18,
+  },
+  chip: {
+    marginHorizontal: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(236, 197, 210, 0.6)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chipActive: {
+    backgroundColor: "#D4B2A7",
+    borderColor: "transparent",
+  },
+  chipPressed: {
+    opacity: 0.7,
+  },
+  chipText: {
+    fontSize: 13,
+    color: "#3E2823",
+    fontFamily: "Poppins",
+    paddingBottom: 18,
+  },
+  chipTextActive: {
+    fontWeight: "600",
+  },
+  card: {
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 253, 249, 0.92)",
+    overflow: "hidden",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  cardImageWrap: {
+    overflow: "hidden",
+  },
+  cardImage: {
+    width: "100%",
+  },
+  emptyWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "rgba(62, 40, 35, 0.7)",
+    fontFamily: "Poppins",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  emptyBtn: {
+    marginTop: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: "#D4B2A7",
+    shadowColor: "#3E2823",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  emptyBtnGhost: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  emptyBtnText: {
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  emptyBtnTextGhost: {
+    color: "#3E2823",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(28, 15, 13, 0.12)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: "rgba(255, 253, 249, 0.98)",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3E2823",
+    fontFamily: "Poppins",
+  },
+  modalHint: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "rgba(62, 40, 35, 0.65)",
+    fontFamily: "Poppins",
+  },
+  modalInput: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(62, 40, 35, 0.1)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#3E2823",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 18,
+  },
+  modalBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 999,
     backgroundColor: "#D4B2A7",
   },
-  emptyBtnGhost: {
-    backgroundColor: "#f5f5f7",
+  modalBtnGhost: {
+    backgroundColor: "rgba(255, 255, 255, 0.88)",
   },
-  emptyBtnText: { color: "#fff", fontWeight: "700" },
-
-
-  // modal styles
-  modalBackdrop: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.25)",
-  justifyContent: "center",
-  padding: 24,
+  modalBtnText: {
+    color: "#3E2823",
+    fontWeight: "600",
+    fontFamily: "Poppins",
   },
-  modalCard: {
-  backgroundColor: "#fff",
-  borderRadius: 16,
-  padding: 16,
-  shadowColor: "#000",
-  shadowOpacity: 0.1,
-  shadowRadius: 12,
-  elevation: 4,
+  lightboxBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#1C0F0D" },
-  modalHint: { marginTop: 4, fontSize: 12, color: "#6b6b6b" },
-  modalInput: {
-  marginTop: 10,
-  borderWidth: 1,
-  borderColor: "#e6e6ea",
-  borderRadius: 10,
-  paddingHorizontal: 12,
-  paddingVertical: 10,
+  lightboxContent: {
+    maxWidth: "90%",
+    alignSelf: "center",
+    alignItems: "center",
+    padding: 24,
   },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 12, marginTop: 14 },
-  modalBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, backgroundColor: "#D4B2A7" },
-  modalBtnGhost: { backgroundColor: "#f5f5f7" },
-  modalBtnText: { color: "#fff", fontWeight: "700" },
+  lightboxImage: {
+    width: "100%",
+    borderRadius: 24,
+    marginBottom: 16,
+  },
+  lightboxMeta: {
+    width: "100%",
+    gap: 10,
+    alignItems: "center",
+  },
+  lightboxTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 14,
+  },
+  lightboxTag: {
+    backgroundColor: "rgba(236, 197, 210, 0.4)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  lightboxTagText: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#FDF3F0",
+    letterSpacing: 0.3,
+  },
+  lightboxNote: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#FDF3F0",
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });

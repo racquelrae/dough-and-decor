@@ -144,6 +144,7 @@ export default function ColorTiles({
   return (
     <View>
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={data}
         keyExtractor={(s) => s.name}
         renderItem={renderItem}

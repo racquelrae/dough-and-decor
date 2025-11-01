@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, Image, Switch, Platform, ActivityIndicator, KeyboardAvoidingView, ScrollView, TouchableWithoutFeedback, Keyboard } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Image,
+  Switch,
+  Platform,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
@@ -13,8 +27,8 @@ export type ItemFormValues = {
   imageUrl?: string | null;
   thumbUrl?: string | null;
   notes?: string;
-  autoAddToList: boolean;   // toggle
-  min: number | null;       // threshold
+  autoAddToList: boolean;
+  min: number | null;
 };
 
 function clampIntOrNull(s: string) {
@@ -23,7 +37,7 @@ function clampIntOrNull(s: string) {
 }
 
 export function ItemForm({
-  mode,                     // "create" | "edit"
+  mode,
   initial,
   onSubmit,
   onCancel,
@@ -36,9 +50,7 @@ export function ItemForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [qty, setQty] = useState(initial?.quantity ?? 1);
   const [expires, setExpires] = useState(initial?.expires ?? false);
-  const [expiryDate, setExpiryDate] = useState<Date | null>(
-    initial?.expiryDate ?? null
-  );
+  const [expiryDate, setExpiryDate] = useState<Date | null>(initial?.expiryDate ?? null);
   const [imageUrl, setImageUrl] = useState<string | undefined | null>(initial?.imageUrl ?? null);
   const [thumbUrl, setThumbUrl] = useState<string | undefined | null>(initial?.thumbUrl ?? null);
   const [notes, setNotes] = useState(initial?.notes ?? "");
@@ -53,7 +65,7 @@ export function ItemForm({
     setName(initial.name ?? "");
     setQty(initial.quantity ?? 1);
     setExpires(!!initial.expires);
-    setExpiryDate(initial.expiryDate ?? null); 
+    setExpiryDate(initial.expiryDate ?? null);
     setImageUrl(initial.imageUrl ?? null);
     setThumbUrl(initial.thumbUrl ?? null);
     setNotes(initial.notes ?? "");
@@ -63,7 +75,7 @@ export function ItemForm({
       initial.min === 0 || typeof initial.min === "number"
         ? Math.max(0, Math.floor(Number(initial.min)))
         : null
-);
+    );
   }, [initial]);
 
   const pick = async () => {
@@ -91,7 +103,7 @@ export function ItemForm({
         name: name.trim(),
         quantity: qty,
         expires,
-        expiryDate: expires ? (expiryDate ?? null) : null,
+        expiryDate: expires ? expiryDate ?? null : null,
         imageUrl: imageUrl ?? null,
         thumbUrl: thumbUrl ?? null,
         notes,
@@ -105,160 +117,284 @@ export function ItemForm({
   };
 
   const onToggleExpires = (value: boolean) => {
-  Haptics.selectionAsync();
-  setExpires(value);
-  if (!value) {
-    // turning OFF: clear any previously selected date & close picker
-    setExpiryDate(null);
-    setDateOpen(false);
-  } else {
-    // turning ON: optionally auto-open the date picker (remove if you don't want this)
-    setTimeout(() => setDateOpen(true), 0);
-  }
-};
+    Haptics.selectionAsync();
+    setExpires(value);
+    if (!value) {
+      setExpiryDate(null);
+      setDateOpen(false);
+    } else {
+      setTimeout(() => setDateOpen(true), 0);
+    }
+  };
 
   return (
-  <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    // bump this if a fixed header sits above; 56–80 usually good
-    keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-  >
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
-        contentInsetAdjustmentBehavior="automatic"
-      >
-        {/* Header */}
-        <View style={styles.headerRow}>
-          {onCancel ? (
-            <Pressable onPress={onCancel}><Text style={{fontFamily:"Poppins", fontSize: 16}}>Cancel</Text></Pressable>
-          ) : <View style={{ width: 48 }} />}
-          <Text style={styles.header}>{mode === "create" ? "Add Item" : "Edit Item"}</Text>
-          <Pressable onPress={save} disabled={saving}>
-            {saving ? <ActivityIndicator /> : <Text style={{ fontWeight: "500", fontFamily:"Poppins", fontSize: 16 }}>Save</Text>}
-          </Pressable>
-        </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            <View style={styles.headerRow}>
+              {onCancel ? (
+                <Pressable onPress={onCancel} disabled={saving}>
+                  <Text style={styles.headerAction}>Cancel</Text>
+                </Pressable>
+              ) : (
+                <View style={{ width: 60 }} />
+              )}
+              <Text style={styles.header}>{mode === "create" ? "New Inventory Item" : "Edit Item"}</Text>
+              <Pressable onPress={save} disabled={saving || uploading}>
+                {saving ? <ActivityIndicator size="small" color="#D4B2A7" /> : <Text style={styles.headerAction}>Save</Text>}
+              </Pressable>
+            </View>
 
-        {/* Photo */}
-        <Pressable onPress={pick} style={styles.photoBox}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.photo} />
-          ) : uploading ? (
-            <ActivityIndicator />
-          ) : (
-            <Text>Tap to add photo</Text>
-          )}
-        </Pressable>
+            <Pressable onPress={pick} style={styles.photoFrame} disabled={uploading || saving}>
+              {imageUrl ? (
+                <Image source={{ uri: imageUrl }} style={styles.photo} />
+              ) : uploading ? (
+                <ActivityIndicator color="#D4B2A7" />
+              ) : (
+                <Text style={styles.photoPlaceholder}>Tap to add photo</Text>
+              )}
+            </Pressable>
 
-        {/* Name */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Hearts"
-            style={styles.input}
-            returnKeyType="done"
-            blurOnSubmit
-            onSubmitEditing={Keyboard.dismiss}
-          />
-        </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g., Rainbow sprinkles"
+                placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                style={styles.input}
+                editable={!saving}
+              />
+            </View>
 
-        {/* Quantity */}
-        <View style={styles.inline}>
-          <Text style={styles.label}>Quantity</Text>
-          <View style={styles.qtyRow}>
-            <Pressable onPress={() => setQty(q => Math.max(0, q - 1))} style={styles.qtyBtn}><Text>-</Text></Pressable>
-            <Text style={{ marginHorizontal: 10, minWidth: 20, textAlign: "center" }}>{qty}</Text>
-            <Pressable onPress={() => setQty(q => q + 1)} style={styles.qtyBtn}><Text>+</Text></Pressable>
+            <View style={styles.inlineFields}>
+              <View style={styles.fieldGroupInline}>
+                <Text style={styles.label}>Quantity</Text>
+                <View style={styles.qtyControls}>
+                  <Pressable
+                    onPress={() => setQty((q) => Math.max(0, q - 1))}
+                    style={styles.stepBtn}
+                    disabled={saving}
+                  >
+                    <Text style={styles.stepText}>–</Text>
+                  </Pressable>
+                  <Text style={styles.qtyValue}>{qty}</Text>
+                  <Pressable
+                    onPress={() => setQty((q) => q + 1)}
+                    style={styles.stepBtn}
+                    disabled={saving}
+                  >
+                    <Text style={styles.stepText}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.fieldGroupInline}>
+                <Text style={styles.label}>Auto-add when low</Text>
+                <Switch
+                  value={autoAddToList}
+                  onValueChange={(v) => {
+                    Haptics.selectionAsync();
+                    setAutoAddToList(v);
+                    if (!v) setMin(null);
+                  }}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.fieldGroup, { opacity: autoAddToList ? 1 : 0.4 }]}> 
+              <Text style={styles.label}>Low stock threshold</Text>
+              <TextInput
+                editable={autoAddToList}
+                keyboardType="number-pad"
+                placeholder="e.g., 2"
+                placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                value={min == null ? "" : String(min)}
+                onChangeText={(t) => setMin(clampIntOrNull(t))}
+                style={styles.input}
+              />
+              <Text style={styles.helperText}>
+                When quantity drops below this number, the item is marked low and added to your shopping list.
+              </Text>
+            </View>
+
+            <View style={styles.inlineFields}>
+              <Text style={styles.label}>Expires</Text>
+              <Switch value={expires} onValueChange={onToggleExpires} />
+            </View>
+
+            {expires && (
+              <Pressable onPress={() => setDateOpen(true)} style={styles.fieldGroup}>
+                <Text style={styles.label}>Expiry date</Text>
+                <View style={styles.datePill}>
+                  <Text style={styles.dateText}>
+                    {expiryDate ? expiryDate.toDateString() : "Pick a date"}
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+            {dateOpen && (
+              <DateTimePicker
+                mode="date"
+                value={expiryDate ?? new Date()}
+                onChange={(_, d) => {
+                  if (Platform.OS !== "ios") setDateOpen(false);
+                  if (d) setExpiryDate(d);
+                }}
+              />
+            )}
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Optional details"
+                placeholderTextColor="rgba(62, 40, 35, 0.35)"
+                style={[styles.input, styles.inputMultiline]}
+                editable={!saving}
+                multiline
+              />
+            </View>
           </View>
-        </View>
-
-        {/* Auto-add when low */}
-        <View style={styles.inline}>
-        <Text style={styles.label}>Auto-add when low</Text>
-        <Switch
-            value={autoAddToList}
-            onValueChange={(v) => {
-            Haptics.selectionAsync();
-            setAutoAddToList(v);
-            if (!v) setMin(null); // turning off clears threshold
-            }}
-        />
-        </View>
-
-        {/* Low stock threshold */}
-        <View style={[styles.field, { opacity: autoAddToList ? 1 : 0.5 }]}>
-        <Text style={styles.label}>Low stock threshold (min)</Text>
-        <TextInput
-            editable={autoAddToList}
-            keyboardType="number-pad"
-            placeholder="e.g., 2"
-            value={min == null ? "" : String(min)}
-            onChangeText={(t) => setMin(clampIntOrNull(t))}
-            style={styles.input}
-        />
-        <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>
-            When quantity ≤ min, this item is considered “low” and will be added to your shopping list.
-        </Text>
-        </View>
-
-        {/* Expiry */}
-        <View style={styles.inline}>
-          <Text style={styles.label}>Expires</Text>
-          <Switch value={expires} onValueChange={onToggleExpires} />
-        </View>
-
-        {expires && (
-          <Pressable onPress={() => setDateOpen(true)} style={styles.field}>
-            <Text style={styles.label}>Expiry Date</Text>
-            <Text style={styles.pill}>
-              {expiryDate ? expiryDate.toDateString() : "Pick a date"}
-            </Text>
-          </Pressable>
-        )}
-        {dateOpen && (
-          <DateTimePicker
-            mode="date"
-            value={expiryDate ?? new Date()}
-            onChange={(_, d) => {
-              if (Platform.OS !== "ios") setDateOpen(false);
-              if (d) setExpiryDate(d);
-            }}
-          />
-        )}
-
-        {/* Notes */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Notes</Text>
-          <TextInput
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Optional details"
-            style={[styles.input, { height: 100, textAlignVertical: "top" }]}
-            multiline
-            returnKeyType="default"
-          />
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
-  </KeyboardAvoidingView>
-);
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, padding: 16 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  header: { fontWeight: "700", fontFamily:"Poppins", fontSize: 20 },
-  photoBox: { height: 150, borderRadius: 16, backgroundColor: "#f4e8e3", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  photo: { width: "100%", height: "100%", borderRadius: 16 },
-  field: { marginVertical: 8 },
-  label: { fontWeight: "600", marginBottom: 6 },
-  input: { backgroundColor: "#fff", borderRadius: 12, padding: 10, borderWidth: 1, borderColor: "#eee" },
-  inline: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 10 },
-  qtyRow: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 12, padding: 6 },
-  qtyBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "#f1e4df", borderRadius: 10 },
-  pill: { backgroundColor: "#fff", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12 },
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  card: {
+    backgroundColor: "rgba(255, 253, 249, 0.95)",
+    borderRadius: 28,
+    padding: 24,
+    gap: 18,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    elevation: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  header: {
+    fontFamily: "Poppins",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#3E2823",
+  },
+  headerAction: {
+    fontFamily: "Poppins",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#3E2823",
+  },
+  photoFrame: {
+    height: 200,
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "rgba(236, 197, 210, 0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photo: {
+    width: "100%",
+    height: "100%",
+  },
+  photoPlaceholder: {
+    fontFamily: "Poppins",
+    color: "rgba(62, 40, 35, 0.55)",
+  },
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldGroupInline: {
+    flex: 1,
+    gap: 6,
+  },
+  label: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3E2823",
+  },
+  input: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(236, 197, 210, 0.5)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    fontFamily: "Poppins",
+    fontSize: 15,
+    color: "#3E2823",
+  },
+  inputMultiline: {
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+  inlineFields: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  qtyControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  stepBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(212, 178, 167, 0.28)",
+  },
+  stepText: {
+    fontFamily: "Poppins",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#3E2823",
+  },
+  qtyValue: {
+    minWidth: 30,
+    textAlign: "center",
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    color: "#3E2823",
+  },
+  helperText: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "rgba(62, 40, 35, 0.6)",
+  },
+  datePill: {
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "rgba(236, 197, 210, 0.5)",
+  },
+  dateText: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#3E2823",
+  },
 });

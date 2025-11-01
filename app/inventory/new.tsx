@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Timestamp } from "firebase/firestore";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function InventoryNew() {
   const navigation = useNavigation();
@@ -27,8 +28,13 @@ export default function InventoryNew() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFDF9" }}>
-      <ItemForm mode="create" initial={{ autoAddToList: false, min: null }} onSubmit={handleSubmit} onCancel={() => navigation.goBack()} />
-    </SafeAreaView>
+      <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 16, backgroundColor: "rgba(255, 253, 249, 0.92)" }}>
+        <ItemForm
+          mode="create"
+          initial={{ autoAddToList: false, min: null }}
+          onSubmit={handleSubmit}
+          onCancel={() => navigation.goBack()}
+        />
+      </SafeAreaView>
   );
 }

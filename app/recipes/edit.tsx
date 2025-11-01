@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView,
-  Image, Alert, Platform, ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView
+  Image, Alert, Platform, ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
@@ -11,8 +13,9 @@ import { db } from "@/firebase/config";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton } from "@/components/BackButton";
+import { LinearGradient } from "expo-linear-gradient";
 
 const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME!;
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
@@ -158,91 +161,129 @@ export default function EditRecipe() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={insets.top + 60}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 240 }} keyboardShouldPersistTaps="handled">
-        <BackButton />
-        <Text style={styles.header}>Edit Recipe</Text>
+    <LinearGradient colors={["#F9E8DE", "#D9B6AB"]} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 0}
+            >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.scrollContent}
+                  keyboardShouldPersistTaps="handled"
+                >
+        <View style={styles.card}>
+          <BackButton style={styles.BackButton} />
+          <Text style={styles.header}>Edit Recipe</Text>
 
-        {/* Photo */}
-        <View style={{ alignItems: "center", marginVertical: 8 }}>
-          <View style={{ position: "relative" }}>
-            {localImageUri ? (
-              <>
-                <Image source={{ uri: localImageUri }} style={styles.photo} />
-                {saving && <View style={styles.photoOverlay}><ActivityIndicator /></View>}
-              </>
-            ) : remotePhoto ? (
-              <Image source={{ uri: remotePhoto }} style={styles.photo} />
-            ) : (
-              <View style={[styles.photo, styles.photoPlaceholder]}><Text style={{ color: "#9a8f8d" }}>No photo</Text></View>
-            )}
+          {/* Photo */}
+          <View style={{ alignItems: "center", marginVertical: 8 }}>
+            <View style={{ position: "relative" }}>
+              {localImageUri ? (
+                <>
+                  <Image source={{ uri: localImageUri }} style={styles.photo} />
+                  {saving && <View style={styles.photoOverlay}><ActivityIndicator /></View>}
+                </>
+              ) : remotePhoto ? (
+                <Image source={{ uri: remotePhoto }} style={styles.photo} />
+              ) : (
+                <View style={[styles.photo, styles.photoPlaceholder]}><Text style={{ color: "#9a8f8d" }}>No photo</Text></View>
+              )}
+            </View>
           </View>
+          <Pressable style={styles.secondaryBtn} onPress={showImagePickerOptions} disabled={saving}>
+            <Text style={styles.secondaryBtnText}>{(localImageUri || remotePhoto) ? "Change Photo" : "Add Photo"}</Text>
+          </Pressable>
+
+          {/* Basics */}
+          <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} editable={!saving} />
+          <TextInput style={[styles.input,{minHeight:80,textAlignVertical:"top"}]} placeholder="Description" value={desc} onChangeText={setDesc} editable={!saving} multiline />
+          <TextInput style={styles.input} placeholder="Time (e.g., 30min)" value={time} onChangeText={setTime} editable={!saving} />
+          <TextInput style={styles.input} placeholder="Servings (e.g., 4)" value={servings} onChangeText={setServings} editable={!saving} keyboardType="numeric" />
+
+          {/* Ingredients */}
+          <Text style={styles.sectionTitle}>Ingredients</Text>
+          {ingredients.map((ing, i) => (
+            <View key={i} style={styles.itemRow}>
+              <Text style={styles.itemNum}>{i+1}.</Text>
+              <TextInput style={[styles.input, styles.itemInput]} placeholder={`Ingredient ${i+1}...`} value={ing} onChangeText={(t)=>updateIngredient(i,t)} editable={!saving} />
+              <Pressable onPress={()=>removeIngredient(i)} style={[styles.removeBtn, saving && {opacity:0.5}]} disabled={saving}>
+                <Text style={styles.removeBtnText}>✕</Text>
+              </Pressable>
+            </View>
+          ))}
+          <Pressable style={[styles.addBtn, saving && {opacity:0.6}]} onPress={addIngredient} disabled={saving}>
+            <Text style={styles.addText}>＋ Add Ingredient</Text>
+          </Pressable>
+
+          {/* Steps */}
+          <Text style={styles.sectionTitle}>Steps</Text>
+          {steps.map((s, i) => (
+            <View key={i} style={styles.itemRow}>
+              <Text style={styles.itemNum}>{i+1}.</Text>
+              <TextInput style={[styles.input, styles.itemInput]} placeholder={`Step ${i+1}...`} value={s} onChangeText={(t)=>updateStep(i,t)} editable={!saving} multiline />
+              <Pressable onPress={()=>removeStep(i)} style={[styles.removeBtn, saving && {opacity:0.5}]} disabled={saving}>
+                <Text style={styles.removeBtnText}>✕</Text>
+              </Pressable>
+            </View>
+          ))}
+          <Pressable style={[styles.addBtn, saving && {opacity:0.6}]} onPress={addStep} disabled={saving}>
+            <Text style={styles.addText}>＋ Add Step</Text>
+          </Pressable>
+
+          {/* Save */}
+          <Pressable style={[styles.button, saving && {opacity:0.7}]} onPress={handleSave} disabled={saving}>
+            <Text style={styles.buttonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+          </Pressable>
         </View>
-        <Pressable style={styles.secondaryBtn} onPress={showImagePickerOptions} disabled={saving}>
-          <Text style={styles.secondaryBtnText}>{(localImageUri || remotePhoto) ? "Change Photo" : "Add Photo"}</Text>
-        </Pressable>
-
-        {/* Basics */}
-        <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} editable={!saving} />
-        <TextInput style={[styles.input,{minHeight:80,textAlignVertical:"top"}]} placeholder="Description" value={desc} onChangeText={setDesc} editable={!saving} multiline />
-        <TextInput style={styles.input} placeholder="Time (e.g., 30min)" value={time} onChangeText={setTime} editable={!saving} />
-        <TextInput style={styles.input} placeholder="Servings (e.g., 4)" value={servings} onChangeText={setServings} editable={!saving} keyboardType="numeric" />
-
-        {/* Ingredients */}
-        <Text style={styles.sectionTitle}>Ingredients</Text>
-        {ingredients.map((ing, i) => (
-          <View key={i} style={styles.itemRow}>
-            <Text style={styles.itemNum}>{i+1}.</Text>
-            <TextInput style={[styles.input, styles.itemInput]} placeholder={`Ingredient ${i+1}...`} value={ing} onChangeText={(t)=>updateIngredient(i,t)} editable={!saving} />
-            <Pressable onPress={()=>removeIngredient(i)} style={[styles.removeBtn, saving && {opacity:0.5}]} disabled={saving}>
-              <Text style={styles.removeBtnText}>✕</Text>
-            </Pressable>
-          </View>
-        ))}
-        <Pressable style={[styles.addBtn, saving && {opacity:0.6}]} onPress={addIngredient} disabled={saving}>
-          <Text style={styles.addText}>＋ Add Ingredient</Text>
-        </Pressable>
-
-        {/* Steps */}
-        <Text style={styles.sectionTitle}>Steps</Text>
-        {steps.map((s, i) => (
-          <View key={i} style={styles.itemRow}>
-            <Text style={styles.itemNum}>{i+1}.</Text>
-            <TextInput style={[styles.input, styles.itemInput]} placeholder={`Step ${i+1}...`} value={s} onChangeText={(t)=>updateStep(i,t)} editable={!saving} multiline />
-            <Pressable onPress={()=>removeStep(i)} style={[styles.removeBtn, saving && {opacity:0.5}]} disabled={saving}>
-              <Text style={styles.removeBtnText}>✕</Text>
-            </Pressable>
-          </View>
-        ))}
-        <Pressable style={[styles.addBtn, saving && {opacity:0.6}]} onPress={addStep} disabled={saving}>
-          <Text style={styles.addText}>＋ Add Step</Text>
-        </Pressable>
-
-        {/* Save */}
-        <Pressable style={[styles.button, saving && {opacity:0.7}]} onPress={handleSave} disabled={saving}>
-          <Text style={styles.buttonText}>{saving ? "Saving..." : "Save Changes"}</Text>
-        </Pressable>
       </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
+    </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: 120, marginLeft: 16, fontFamily: "Poppins", fontSize: 24, fontWeight: "700", color: "#1C0F0D" },
+    safeArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  card: {
+    backgroundColor: "rgba(255, 253, 249, 0.95)",
+    borderRadius: 28,
+    padding: 24,
+    paddingTop: 72,
+    gap: 16,
+    shadowColor: "#46302B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    elevation: 10,
+    overflow: "hidden",
+  },
+  BackButton: { position: "absolute", top: 65, left: 16, zIndex: 10 },
+  header: { marginTop: -10, marginLeft: 0, fontFamily: "Poppins", fontSize: 24, fontWeight: "700", color: "#1C0F0D" },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, marginVertical: 8, color: "#1C0F0D" },
-  photo: { width: 300, height: 200, borderRadius: 12, backgroundColor: "#f4f2f1" },
+  photo: { width: 350, height: 250, borderRadius: 12, backgroundColor: "#f4f2f1" },
   photoPlaceholder: { alignItems: "center", justifyContent: "center" },
   photoOverlay: { position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.6)", borderRadius: 12 },
-  secondaryBtn: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#f8d7d1", borderWidth: 1, borderColor: "#eee", marginBottom: 8, alignItems: "center", width: 300, alignSelf: "center" },
+  secondaryBtn: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#d4b2a7b5", borderWidth: 1, borderColor: "#eee", marginBottom: 8, alignItems: "center", width: 300, alignSelf: "center" },
   secondaryBtnText: { fontWeight: "600", color: "#1C0F0D" },
   sectionTitle: { fontSize: 18, fontWeight: "600", marginTop: 16, marginBottom: 4, color: "#1C0F0D" },
   itemRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 },
   itemNum: { width: 18, textAlign: "right", marginTop: 14, color: "#9a8f8d" },
   itemInput: { flex: 1, marginVertical: 0, minHeight: 44 },
-  removeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#f8d7d1", marginTop: 8 },
+  removeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#d4b2a7b5", marginTop: 8 },
   removeBtnText: { fontWeight: "700", color: "#1C0F0D" },
-  addBtn: { padding: 12, borderRadius: 12, backgroundColor: "#f8d7d1", alignItems: "center", marginTop: 4, marginBottom: 8 },
+  addBtn: { padding: 12, borderRadius: 12, backgroundColor: "#d4b2a7b5", alignItems: "center", marginTop: 4, marginBottom: 8 },
   addText: { fontWeight: "600", color: "#333" },
-  button: { backgroundColor: "#f8d7d1", padding: 16, borderRadius: 12, marginTop: 12, alignItems: "center" },
+  button: { backgroundColor: "#D4B2A7", padding: 16, borderRadius: 12, marginTop: 12, alignItems: "center" },
   buttonText: { fontWeight: "600", color: "#333" },
 });

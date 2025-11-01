@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   tabBar: { 
-    height: 40, 
+    height: 60, 
     alignItems: "center"
   },
   chip: {
@@ -292,7 +292,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 14,
     backgroundColor: "#EEE7E3",
-    marginRight: 8
+    marginRight: 8,
+    marginBottom: 12,
   },
   chipActive: {
     backgroundColor: "#E2C9C0"

@@ -62,8 +62,14 @@ function TimerCard({ title, time, seconds }: TimerCardProps) {
   );
 }
 
-type ActivityCardProps = { label: string; time: string; onPress?: () => void; icon?: React.ReactNode };
-function ActivityCard({ label, time, onPress, icon }: ActivityCardProps) {
+type ActivityCardProps = {
+  label: string;
+  time: string;
+  onPress?: () => void;
+  icon?: React.ReactNode;
+  meta?: string;
+};
+function ActivityCard({ label, time, onPress, icon, meta }: ActivityCardProps) {
   const Comp: any = onPress ? TouchableOpacity : View;
   return (
     <Comp style={styles.activityCard} onPress={onPress} activeOpacity={0.8}>
@@ -71,6 +77,7 @@ function ActivityCard({ label, time, onPress, icon }: ActivityCardProps) {
       <View style={styles.activityCardIcon}>{icon ?? null}</View>
       <Text style={styles.activityCardTime}>{time}</Text>
       <Text style={styles.activityCardLabel}>{label}</Text>
+      {meta ? <Text style={styles.activityCardMeta}>{meta}</Text> : null}
     </Comp>
   );
 }
@@ -210,30 +217,39 @@ export default function TimerMenuScreen() {
               {recents.length === 0 ? (
                 <Text style={styles.emptyState}>No recent timers yet.</Text>
               ) : (
-                recents.map((r, idx) => (
-                  <ActivityCard
-                    key={idx}
-                    label={fmtLabel(r.seconds)}
-                    time={new Date(r.usedAt).toLocaleTimeString()}
-                    onPress={() => navigation.navigate('Timer', { seconds: r.seconds })}
-                    icon={
-                      <Svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <Path
-                          d="M13.6667 25.6667C20.1101 25.6667 25.3333 20.4435 25.3333 14C25.3333 7.55673 20.1101 2.3335 13.6667 2.3335C7.22334 2.3335 2 7.55673 2 14C2 20.4435 7.22334 25.6667 13.6667 25.6667Z"
-                          stroke="rgba(62, 40, 35, 0.35)"
-                          strokeWidth="2"
-                        />
-                        <Path
-                          d="M13.6667 8.1665V14L17.5 15.75"
-                          stroke="rgba(62, 40, 35, 0.6)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    }
-                  />
-                ))
+                recents.map((r, idx) => {
+                  const lastUsed = new Date(r.usedAt).toLocaleTimeString();
+                  return (
+                    <ActivityCard
+                      key={idx}
+                      label={r.description ?? `Last used ${lastUsed}`}
+                      time={fmtLabel(r.seconds)}
+                      meta={r.description ? `Last used ${lastUsed}` : undefined}
+                      onPress={() =>
+                        navigation.navigate('Timer', {
+                          seconds: r.seconds,
+                          description: r.description,
+                        })
+                      }
+                      icon={
+                        <Svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                          <Path
+                            d="M13.6667 25.6667C20.1101 25.6667 25.3333 20.4435 25.3333 14C25.3333 7.55673 20.1101 2.3335 13.6667 2.3335C7.22334 2.3335 2 7.55673 2 14C2 20.4435 7.22334 25.6667 13.6667 25.6667Z"
+                            stroke="rgba(62, 40, 35, 0.35)"
+                            strokeWidth="2"
+                          />
+                          <Path
+                            d="M13.6667 8.1665V14L17.5 15.75"
+                            stroke="rgba(62, 40, 35, 0.6)"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      }
+                    />
+                  );
+                })
               )}
             </View>
           </View>
@@ -488,10 +504,16 @@ const styles = StyleSheet.create({
   },
   activityCardLabel: {
     fontFamily: 'Poppins',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#3E2823',
     flex: 1,
+  },
+  activityCardMeta: {
+    fontFamily: 'Poppins',
+    fontSize: 11,
+    color: 'rgba(62, 40, 35, 0.5)',
+    marginTop: 2,
   },
   addButton: {
     position: 'absolute',

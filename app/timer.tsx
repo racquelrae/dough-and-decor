@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Platform, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Platform, ScrollView, TextInput } from 'react-native';
 import Svg, {
   Circle,
   Path,
@@ -17,6 +17,7 @@ import { addRecentTimer } from '../utils/recents';
 import { BackButton } from '../components/BackButton';
 import { Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 
 // Foreground behavior (optional: show even if app is open)
 (Notifications as any).setNotificationHandler({
@@ -99,12 +100,71 @@ export default function TimerScreen() {
   const route = useRoute<any>();
   const selectedSeconds = useMemo(() => Number(route.params?.seconds ?? 10 * 60), [route.params]);
   const initialSecondsRef = useRef(selectedSeconds);
+  const [description, setDescription] = useState(() => route.params?.description ?? '');
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    setDescription(route.params?.description ?? '');
+  }, [route.params?.description]);
 
   const { secondsLeft, status, start, pause, resume, stop, reset, setSecondsLeft } =
     useAnchoredCountdown(initialSecondsRef.current);
 
   // Keep notification id to cancel when stopping/resetting
   const notifIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          require('../assets/sounds/timer-sound.mp3'),
+          { isLooping: true, volume: 1, shouldPlay: false }
+        );
+
+        if (mounted) {
+          soundRef.current = sound;
+        } else {
+          await sound.unloadAsync();
+        }
+      } catch (e) {
+        console.log('[Timer] sound init error', e);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      const sound = soundRef.current;
+      if (sound) {
+        sound.stopAsync().catch(() => {});
+        sound.unloadAsync().catch(() => {});
+        soundRef.current = null;
+      }
+    };
+  }, []);
+
+  const stopAlarmSound = useCallback(async () => {
+    const sound = soundRef.current;
+    if (!sound) return;
+    try {
+      const status = await sound.getStatusAsync();
+      if (status.isLoaded && (status.isPlaying || status.positionMillis > 0)) {
+        await sound.stopAsync();
+      }
+    } catch (e) {
+      console.log('[Timer] stop sound error', e);
+    }
+  }, []);
 
   // One-time setup
   useEffect(() => {
@@ -132,9 +192,10 @@ export default function TimerScreen() {
         remaining: secondsLeft,
         status,
         initial: initialSecondsRef.current,
+        description,
       })
     ).catch(() => {});
-  }, [secondsLeft, status]);
+  }, [secondsLeft, status, description]);
 
   // When user pauses/resumes/stops, manage notifications
   const scheduleEndNotification = async (durationSeconds: number) => {
@@ -156,10 +217,13 @@ export default function TimerScreen() {
         ios:     { type: 'timeInterval', seconds: secs, repeats: false },
       }) as Notifications.NotificationTriggerInput;
 
+      const label = description.trim();
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Timer finished!',
-          body: `Your ${Math.round(secs / 60)}-minute timer is up.`,
+          body: label
+            ? `Your ${label} timer is complete.`
+            : `Your ${Math.round(secs / 60)}-minute timer is up.`,
           sound: Platform.OS === 'ios' ? 'chime' : undefined,
         },
         trigger,
@@ -182,22 +246,24 @@ export default function TimerScreen() {
   };
 
   const handleStartPause = async () => {
-  if (status === 'running') {
-    pause();
-    await cancelEndNotification();
-  } else if (status === 'paused') {
-    resume();
-    await scheduleEndNotification(secondsLeft);
-  } else {
-    // idle | stopped | done → start from the current display (or preset)
-    const startFrom = secondsLeft > 0 ? secondsLeft : initialSecondsRef.current;
-    start(startFrom);
-    await scheduleEndNotification(startFrom);
-    addRecentTimer(initialSecondsRef.current);
-  }
-};
+    if (status === 'running') {
+      pause();
+      await cancelEndNotification();
+    } else if (status === 'paused') {
+      resume();
+      await scheduleEndNotification(secondsLeft);
+    } else {
+      // idle | stopped | done → start from the current display (or preset)
+      const startFrom = secondsLeft > 0 ? secondsLeft : initialSecondsRef.current;
+      await stopAlarmSound();
+      start(startFrom);
+      await scheduleEndNotification(startFrom);
+      addRecentTimer(initialSecondsRef.current, description);
+    }
+  };
 
   const handleQuitPress = async () => {
+    await stopAlarmSound();
     if (status !== 'stopped') {
       stop();
       await cancelEndNotification();
@@ -206,7 +272,7 @@ export default function TimerScreen() {
       reset(initialSecondsRef.current);
       start(initialSecondsRef.current);
       await scheduleEndNotification(initialSecondsRef.current);
-      addRecentTimer(initialSecondsRef.current);
+      addRecentTimer(initialSecondsRef.current, description);
     }
   };
 
@@ -216,6 +282,27 @@ export default function TimerScreen() {
       cancelEndNotification();
     }
   }, [status]);
+
+  useEffect(() => {
+    const sound = soundRef.current;
+    if (!sound) return;
+
+    if (status === 'done') {
+      (async () => {
+        try {
+          const playbackStatus = await sound.getStatusAsync();
+          if (playbackStatus.isLoaded) {
+            await sound.setPositionAsync(0);
+            await sound.playAsync();
+          }
+        } catch (e) {
+          console.log('[Timer] play sound error', e);
+        }
+      })();
+    } else {
+      stopAlarmSound();
+    }
+  }, [status, stopAlarmSound]);
 
   // UI
   const isRunning = status === 'running';
@@ -250,6 +337,17 @@ export default function TimerScreen() {
           <View style={styles.headerRow}>
             <Text style={styles.header}>Timer</Text>
             <Text style={styles.subheader}>Stay focused and let us watch the clock.</Text>
+          </View>
+          <View style={styles.descriptionBlock}>
+            <Text style={styles.descriptionLabel}>Description</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="e.g., Bake cookies, icing set, dough rest"
+              placeholderTextColor="rgba(62, 40, 35, 0.35)"
+              style={styles.descriptionInput}
+              maxLength={60}
+            />
           </View>
 
           <View style={styles.timerCircleContainer} pointerEvents="box-none">
@@ -452,4 +550,22 @@ const styles = StyleSheet.create({
   },
   ellipseLight: { position: 'absolute', top: 0, left: 0, width: 320, height: 320 },
   ellipseDark: { position: 'absolute', top: 0, left: 0, width: 320, height: 320 },
+  descriptionBlock: {
+    marginTop: 12,
+  },
+  descriptionLabel: {
+    fontFamily: 'Poppins',
+    fontSize: 13,
+    color: 'rgba(62, 40, 35, 0.7)',
+    marginBottom: 6,
+  },
+  descriptionInput: {
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: '#3E2823',
+    backgroundColor: 'rgba(236, 197, 210, 0.25)',
+  },
 });

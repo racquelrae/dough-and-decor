@@ -4,7 +4,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Home: undefined;
   TimerMenu: undefined;
-  Timer: { seconds: number } | undefined;
+  Timer: { seconds: number; description?: string } | undefined;
   IcingColorGuide: undefined;
   ShoppingList: undefined;
   MeasurementConverter: undefined;
@@ -20,4 +20,3 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined;
   UpdateProfile: { mode?: "create" | "edit" } | undefined;
 };
-

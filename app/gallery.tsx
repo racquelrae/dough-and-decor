@@ -574,9 +574,10 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   tagsBar: {
-    marginTop: 14,
+    marginTop: 16,
     marginBottom: 16,
     backgroundColor: "rgba(255, 253, 249, 0.92)",
+    minHeight: 44,
   },
   tagScroller: {
     paddingHorizontal: 2,
@@ -600,7 +601,8 @@ const styles = StyleSheet.create({
   chip: {
     marginHorizontal: 6,
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingTop: 8,
+    paddingBottom: 11,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "rgba(236, 197, 210, 0.6)",
@@ -622,10 +624,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#3E2823",
     fontFamily: "Poppins",
-    paddingBottom: 18,
+    paddingHorizontal: 10,
+    paddingBottom: 0,
   },
   chipTextActive: {
     fontWeight: "600",
+    paddingHorizontal: 10,
+    paddingBottom: 0,
   },
   card: {
     borderRadius: 24,

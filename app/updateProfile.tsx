@@ -20,6 +20,8 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
 import { ToastHost, showToast } from '@/components/Toast';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME!;
 export const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
@@ -28,6 +30,7 @@ export const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOA
 export default function CompleteProfileScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "UpdateProfile">>();
   const mode: "create" | "edit" = route?.params?.mode ?? "create";
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [username, setUsername] = useState('');
   const [userType, setUserType] = useState('');
   const [customType, setCustomType] = useState('');
@@ -204,6 +207,12 @@ export default function CompleteProfileScreen() {
       await setDoc(userRef, updateData, { merge: true });
       showToast("Profile updated!");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (mode === "create") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
     } catch (e) {
       console.log('Profile update error:', e);
       showToast("Update failed.");

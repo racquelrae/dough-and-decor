@@ -64,7 +64,6 @@ export default function InventoryEdit() {
   return (
     <LinearGradient colors={["#F9E8DE", "#D9B6AB"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 16 }}>
-        <BackButton />
         <ItemForm
           mode="edit"
           initial={initial}

@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 22,
     elevation: 10,
+    overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",

@@ -68,8 +68,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
        <SafeAreaView style={styles.safeArea}>
          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
            <View style={styles.bodyCard}>
-            <BackButton style={styles.backButton} />
             <View style={styles.heroSection}>
+              <BackButton style={styles.backButton} />
              {recipe.photo ? (
                <Image source={{ uri: recipe.photo }} style={styles.heroImage} />
              ) : (
@@ -159,8 +159,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
      height: 260,
      borderRadius: 28,
      overflow: "hidden",
-     marginHorizontal: -18,
-     marginTop: 24,
+     marginHorizontal: -24,
+     marginTop: -24,
      shadowColor: "#46302B",
      shadowOffset: { width: 0, height: 12 },
      shadowOpacity: 0.22,
@@ -188,6 +188,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
      position: "absolute",
      top: 60,
      left: 10,
+     backgroundColor: 'rgba(235, 214, 207, 0.65)'
    },
    heroActions: {
      position: "absolute",

@@ -500,7 +500,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 24,
     elevation: 12,
-    overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",
@@ -556,7 +555,7 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     marginBottom: 14,
-    backgroundColor: "rgba(255, 253, 249, 0.92)",
+    backgroundColor: "transparent",
   },
   row: {
     flexDirection: "row",
